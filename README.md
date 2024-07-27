@@ -1,28 +1,27 @@
 # Laravel Grafana
-A simple docker-compose workflow to set up a LEMP stack with Grafana, Prometheus and Loki docker containers. Creating this project for monitoring application performance of a Laravel application using Grafana, Prometheus and Loki.
+A straightforward docker-compose setup to launch a Laravel application alongside Grafana, Prometheus, and Loki containers. This project aims to monitor the performance of a Laravel application using Grafana for visualization, Prometheus for metrics collection, and Loki for log aggregation.
 
 ## Usage
 
 To get started, make sure you have [Docker installed](https://docs.docker.com/docker-for-mac/install/) on your system, and then clone this repository.
 
-From the project's root directory run `docker-compose up -d --build`. Open up your browser of choice to [http://localhost:8080](http://localhost:8080) and you should see your Laravel app is running. 
+From the project's root directory run `./vendor/bin/sail up`. If you want to run this in background, run `./vendor/bin/sail up -d`. Then open up your browser of choice to [http://localhost:8080,](http://localhost:8080) and you should see your Laravel app is running. 
 
 We have added three more container that handle Composer, NPM, and Artisan commands without having to have these platforms installed on your local computer. Use the following command templates from your project root:
 
-- `docker-compose run --rm composer install`
-- `docker-compose run --rm npm run dev`
-- `docker-compose run --rm artisan migrate:refresh --seed` 
+- `./vendor/bin/sail composer install`
+- `./vendor/bin/sail npm run dev`
+- `./vendor/bin/sail php artisan migrate:refresh --seed` 
 
-The created container and their ports (if used) are as follows:
+The created containers and their respective ports (if used) are as follows:
 
-- **nginx** - `:8080`
-- **mysql** - `:3306`
-- **php** - `:9000`
-- **npm**
-- **composer**
-- **artisan**
-- **grafana** - `:3000`
-- **loki** - `:3100`
+- **Laravel Application: Exposes port** - `:8000`
+- **MySQL Database: Exposes port** - `:3306`
+- **Grafana: Exposes port** - `:3000`
+- **Prometheus: Exposes port** - `:9000`
+- **Loki: Exposes port** - `:3100`
+
+These ports facilitate access to the Laravel application, Grafana dashboard, Prometheus metrics, and Loki logs.
 
 ## Persistent MySQL Storage
 
