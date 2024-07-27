@@ -19,7 +19,7 @@ class DataPointFactory extends Factory
      *
      * @return array
      */
-    public function definition()
+    public function definition(): array
     {
         return [
             'name' => "temperature",
@@ -27,5 +27,4 @@ class DataPointFactory extends Factory
             'cast' => "float",
         ];
     }
-
 }

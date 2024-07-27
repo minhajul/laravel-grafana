@@ -36,6 +36,4 @@ volumes:
   - ./.docker/mysql:/var/lib/mysql
 ```
 
-
-
 **Credit:** Following this repo [here](https://github.com/aschmelyun/laravel-grafana-dashboard).

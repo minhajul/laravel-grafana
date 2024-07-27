@@ -20,7 +20,7 @@ class UserFactory extends Factory
      *
      * @return array
      */
-    public function definition()
+    public function definition(): array
     {
         return [
             'name' => $this->faker->name,
@@ -31,7 +31,7 @@ class UserFactory extends Factory
         ];
     }
 
-    public function admin()
+    public function admin(): UserFactory
     {
         return $this->state([
             'email' => 'admin@email.com',
@@ -39,12 +39,11 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function user()
+    public function user(): UserFactory
     {
         return $this->state([
             'email' => 'user@email.com',
             'password' => bcrypt('user')
         ]);
     }
-
 }

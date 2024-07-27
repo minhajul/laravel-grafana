@@ -12,7 +12,7 @@ class DataPointTableSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
         Datapoint::factory()->times(10000)->create();
     }
