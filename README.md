@@ -5,7 +5,7 @@ A straightforward docker-compose setup to launch a Laravel application alongside
 
 To get started, make sure you have [Docker installed](https://docs.docker.com/docker-for-mac/install/) on your system, and then clone this repository.
 
-From the project's root directory run `./vendor/bin/sail up`. If you want to run this in background, run `./vendor/bin/sail up -d`. Then open up your browser of choice to [http://localhost:8080,](http://localhost:8080) and you should see your Laravel app is running. 
+From the project's root directory run `./vendor/bin/sail up`. If you want to run this in background, run `./vendor/bin/sail up -d`. Then open up your browser of choice to [http://localhost:80,](http://localhost:80) and you should see your Laravel app is running. 
 
 We have added three more container that handle Composer, NPM, and Artisan commands without having to have these platforms installed on your local computer. Use the following command templates from your project root:
 
