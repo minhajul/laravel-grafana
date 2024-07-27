@@ -6,8 +6,8 @@ use App\Models\Datapoint;
 
 class DatapointController extends Controller
 {
-    public function index()
+    public function __invoke()
     {
-        return Datapoint::paginate(20);
+        return Datapoint::query()->paginate(20);
     }
 }
