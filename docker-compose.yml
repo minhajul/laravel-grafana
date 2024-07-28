@@ -49,17 +49,31 @@ services:
             timeout: 5s
 
     loki:
-        image: grafana/loki:1.4.1
+        image: grafana/loki:latest
         ports:
-            - 3100:3100
-        command: -config.file=/etc/loki/local-config.yaml
+            - "3100:3100"
+        volumes:
+            - loki-data:/loki
         networks:
             - sail
+
+    prometheus:
+        image: prom/prometheus:latest
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./.docker/config/prometheus.yml:/etc/prometheus/prometheus.yml
+            - prometheus-data:/prometheus
+        command:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+        depends_on:
+            - laravel.test
+            - loki
 
     promtail:
         image: grafana/promtail:v1.3.0
         volumes:
-            - app_data:/var/www/html/storage/logs
+            - promtail-data:/var/www/html/storage/logs
         command: -config.file=/etc/promtail/docker-config.yaml
         networks:
             - sail
@@ -75,12 +89,16 @@ services:
             - "3000:3000"
         depends_on:
             - mysql
+            - prometheus
         networks:
             - sail
 networks:
     sail:
         driver: bridge
 volumes:
-    app_data: {}
+    grafana-data:
+    prometheus-data:
+    loki-data:
+    promtail-data:
     sail-mysql:
         driver: local
