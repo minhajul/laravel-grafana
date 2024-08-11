@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4bcb9d9484e6858ef4ec1d88bbd6e961",
+    "content-hash": "aa662371e40ad707260465b6a2fab747",
     "packages": [
         {
             "name": "brick/math",
@@ -1049,58 +1049,6 @@
                 }
             ],
             "time": "2023-12-03T19:50:20+00:00"
-        },
-        {
-            "name": "jimdo/prometheus_client_php",
-            "version": "v0.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Jimdo/prometheus_client_php.git",
-                "reference": "43fc3bd312e790fa79457bb5b146ef4132ed9b83"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Jimdo/prometheus_client_php/zipball/43fc3bd312e790fa79457bb5b146ef4132ed9b83",
-                "reference": "43fc3bd312e790fa79457bb5b146ef4132ed9b83",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "4.1.0"
-            },
-            "suggest": {
-                "ext-apc": "Required if using APCu.",
-                "ext-redis": "Required if using Redis.",
-                "guzzlehttp/guzzle": "~6.0 for running the blackbox tests."
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Prometheus\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "Joscha",
-                    "email": "joscha@schnipseljagd.org"
-                },
-                {
-                    "name": "Jan Brauer",
-                    "email": "jan.brauer@jimdo.com"
-                }
-            ],
-            "support": {
-                "issues": "https://github.com/Jimdo/prometheus_client_php/issues",
-                "source": "https://github.com/Jimdo/prometheus_client_php/tree/master"
-            },
-            "abandoned": true,
-            "time": "2016-09-07T13:52:03+00:00"
         },
         {
             "name": "laravel/framework",
