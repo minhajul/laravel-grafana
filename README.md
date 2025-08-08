@@ -15,10 +15,10 @@ We have added three more container that handle Composer, NPM, and Artisan comman
 
 The created containers and their respective ports (if used) are as follows:
 
-- **Laravel Application: Exposes port** - `:8000`
+- **Laravel Application: Exposes port** - `:80`
 - **MySQL Database: Exposes port** - `:3306`
 - **Grafana: Exposes port** - `:3000`
-- **Prometheus: Exposes port** - `:9000`
+- **Prometheus: Exposes port** - `:9090`
 - **Loki: Exposes port** - `:3100`
 
 These ports facilitate access to the Laravel application, Grafana dashboard, Prometheus metrics, and Loki logs.
