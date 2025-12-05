@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'laravel'
+    metrics_path: '/prometheus'  # Spatie uses /prometheus, not /metrics
+    static_configs:
+      - targets: ['laravel.test:80']
+        # Ensure you have a metrics exporter package installed in Laravel
+        # or change port to 9090 if using a sidecar exporter.

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+if [ ! -z "$WWWUSER" ]; then
+    usermod -u $WWWUSER sail
+fi
+
+if [ ! -d /.composer ]; then
+    mkdir /.composer
+fi
+
+chmod -R u=rwX,g=rX,o= /.composer
+
+if [ ! -z "$WWWGROUP" ]; then
+    groupmod -g $WWWGROUP sail
+fi
+
+if [ -d /var/www/html ]; then
+    chown -R sail:sail /var/www/html
+    chmod +x /var/www/html/artisan
+fi
+
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
