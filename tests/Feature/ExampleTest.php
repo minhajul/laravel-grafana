@@ -20,12 +20,15 @@ it('returns paginated datapoint', function () {
     $response
         ->assertOk()
         ->assertJsonStructure([
+            'status',
             'data',
-            'links',
             'meta' => [
-                'current_page',
-                'per_page',
                 'total',
+                'per_page',
+                'current_page',
+                'last_page',
+                'next_page_url',
+                'previous_page_url',
             ],
         ]);
 

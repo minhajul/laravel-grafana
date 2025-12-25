@@ -20,8 +20,8 @@ final class DatapointController extends Controller
                 'per_page' => $dataPoints->perPage(),
                 'current_page' => $dataPoints->currentPage(),
                 'last_page' => $dataPoints->lastPage(),
-                'nextPageUrl' => $dataPoints->nextPageUrl(),
-                'previousPageUrl' => $dataPoints->previousPageUrl(),
+                'next_page_url' => $dataPoints->nextPageUrl(),
+                'previous_page_url' => $dataPoints->previousPageUrl(),
             ],
         ]);
     }
