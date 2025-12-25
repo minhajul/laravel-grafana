@@ -31,19 +31,17 @@ final class UserFactory extends Factory
         ];
     }
 
-    public function admin(): static
+    public function admin(): UserFactory
     {
         return $this->state([
-            'email' => 'admin@email.com',
-            'password' => bcrypt('admin'),
+            'email' => 'admin@example.com'
         ]);
     }
 
-    public function user(): static
+    public function user(): UserFactory
     {
         return $this->state([
-            'email' => 'user@email.com',
-            'password' => bcrypt('user'),
+            'email' => 'user@example.com'
         ]);
     }
 }
