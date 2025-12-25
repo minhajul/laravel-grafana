@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Datapoint;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class DataPointFactory extends Factory
+final class DataPointFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
@@ -16,15 +18,13 @@ class DataPointFactory extends Factory
 
     /**
      * Define the model's default state.
-     *
-     * @return array
      */
     public function definition(): array
     {
         return [
-            'name' => "temperature",
+            'name' => 'temperature',
             'value' => $this->faker->randomFloat(0, 90),
-            'cast' => "float",
+            'cast' => 'float',
         ];
     }
 }

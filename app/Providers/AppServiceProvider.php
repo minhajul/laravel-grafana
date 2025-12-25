@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use Illuminate\Support\Facades\DB;
-use Prometheus\CollectorRegistry;
 use Illuminate\Support\ServiceProvider;
+use Prometheus\CollectorRegistry;
+use Throwable;
 
-class AppServiceProvider extends ServiceProvider
+final class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
@@ -30,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
             $durationInSeconds = $query->time / 1000;
 
             // Get the SQL verb (select, insert, update) for the label
-            $type = strtolower(strtok($query->sql, ' '));
+            $type = mb_strtolower(strtok($query->sql, ' '));
 
             try {
                 // Access the underlying Prometheus Registry directly
@@ -46,7 +49,7 @@ class AppServiceProvider extends ServiceProvider
 
                 // Record the observation
                 $histogram->observe($durationInSeconds, [$type]);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Fail silently so metrics don't break the app
             }
         });

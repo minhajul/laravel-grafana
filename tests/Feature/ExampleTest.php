@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Datapoint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -31,5 +33,3 @@ it('returns paginated datapoint', function () {
         ->and($response->json('meta.total'))->toBe(25)
         ->and(count($response->json('data')))->toBe(20);
 });
-
-

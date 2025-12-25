@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Datapoint;
 
-class DatapointController extends Controller
+final class DatapointController extends Controller
 {
     public function __invoke()
     {
@@ -20,7 +22,7 @@ class DatapointController extends Controller
                 'last_page' => $dataPoints->lastPage(),
                 'nextPageUrl' => $dataPoints->nextPageUrl(),
                 'previousPageUrl' => $dataPoints->previousPageUrl(),
-            ]
+            ],
         ]);
     }
 }

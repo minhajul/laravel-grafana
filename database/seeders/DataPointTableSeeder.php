@@ -1,16 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\Datapoint;
 use Illuminate\Database\Seeder;
 
-class DataPointTableSeeder extends Seeder
+final class DataPointTableSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     *
-     * @return void
      */
     public function run(): void
     {
