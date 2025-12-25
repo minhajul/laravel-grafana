@@ -31,17 +31,17 @@ final class UserFactory extends Factory
         ];
     }
 
-    public function admin(): UserFactory
+    public function admin(): self
     {
         return $this->state([
-            'email' => 'admin@example.com'
+            'email' => 'admin@example.com',
         ]);
     }
 
-    public function user(): UserFactory
+    public function user(): self
     {
         return $this->state([
-            'email' => 'user@example.com'
+            'email' => 'user@example.com',
         ]);
     }
 }
