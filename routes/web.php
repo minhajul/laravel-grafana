@@ -23,6 +23,7 @@ Route::get('/log-test', function () {
     Log::error('Whoops! This is a fake error for testing.');
 
     return response()->json([
+        'status' => 'OK',
         'message' => 'Log has been sent.',
     ]);
 });
