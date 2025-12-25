@@ -6,7 +6,15 @@ use Illuminate\Support\Facades\Log;
 use Prometheus\CollectorRegistry;
 use Prometheus\RenderTextFormat;
 
-Route::get('/', DatapointController::class)->name('datapoint.index');
+Route::get('/', function () {
+    return response()->json([
+        'status' => 'OK',
+        'message' => 'Laravel Grafana api',
+        'version' => '1.0.0'
+    ]);
+});
+
+Route::get('/datapoint', DatapointController::class);
 
 Route::get('/log-test', function () {
     Log::info("This is a test log from Laravel to Loki! Time: " . now());
@@ -18,13 +26,10 @@ Route::get('/log-test', function () {
 });
 
 Route::get('/prometheus', function () {
-    // 1. Get the registry we wrote to in AppServiceProvider
     $registry = app(CollectorRegistry::class);
 
-    // 2. Create a Renderer (converts data to text)
     $renderer = new RenderTextFormat();
 
-    // 3. Render and return with correct headers
     $result = $renderer->render($registry->getMetricFamilySamples());
 
     return response($result)
