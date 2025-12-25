@@ -9,7 +9,7 @@ use Prometheus\RenderTextFormat;
 Route::get('/', function () {
     return response()->json([
         'status' => 'OK',
-        'message' => 'Laravel Grafana api',
+        'data' => 'Laravel Grafana api',
         'version' => '1.0.0'
     ]);
 });
