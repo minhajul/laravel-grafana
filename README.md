@@ -130,7 +130,7 @@ If you want to wipe the database and all metrics/logs to start fresh:
 
 ### Troubleshooting
 
-**"Loki: Ingester not ready"**
+**"Loki: `Ingester` not ready"**
 
 * Loki takes 30-60 seconds to initialize its storage ring on startup. Wait a minute and refresh.
   **"Laravel Logs not showing in Grafana"**
