@@ -14,8 +14,12 @@ final class DataPointTableSeeder extends Seeder
      */
     public function run(): void
     {
-        Datapoint::factory()
+        $data = Datapoint::factory()
             ->times(10000)
-            ->create();
+            ->make()
+            ->map(fn($model) => $model->getAttributes())
+            ->toArray();
+
+        collect($data)->chunk(1000)->each(fn($chunk) => Datapoint::query()->insert($chunk->toArray()));
     }
 }
