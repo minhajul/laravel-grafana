@@ -23,10 +23,10 @@ final class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name,
-            'email' => $this->faker->unique()->safeEmail,
+            'name' => fake()->name,
+            'email' => fake()->unique()->safeEmail,
             'email_verified_at' => now(),
-            'password' => bcrypt('password'),
+            'password' => 'password',
             'remember_token' => Str::random(10),
         ];
     }
