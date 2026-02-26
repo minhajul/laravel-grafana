@@ -32,7 +32,7 @@ final class User extends Authenticatable
     public function password(): Attribute
     {
         return new Attribute(
-            set: fn($value) => Hash::make($value),
+            set: fn ($value) => Hash::make($value),
         );
     }
 }
