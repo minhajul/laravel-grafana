@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Prometheus\CollectorRegistry;
 use Throwable;
@@ -44,8 +45,8 @@ final class AppServiceProvider extends ServiceProvider
                 );
 
                 $histogram->observe($durationInSeconds, [$type]);
-            } catch (Throwable $e) {
-                //
+            } catch (Throwable $exception) {
+                Log::error("Error: ", [$exception->getMessage()]);
             }
         });
     }
