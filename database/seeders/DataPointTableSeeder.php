@@ -20,6 +20,8 @@ final class DataPointTableSeeder extends Seeder
             ->map(fn ($model) => $model->getAttributes())
             ->toArray();
 
-        collect($data)->chunk(1000)->each(fn ($chunk) => Datapoint::query()->insert($chunk->toArray()));
+        collect($data)
+            ->chunk(1000)
+            ->each(fn ($chunk) => Datapoint::query()->insert($chunk->toArray()));
     }
 }
