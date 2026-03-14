@@ -46,7 +46,7 @@ final class AppServiceProvider extends ServiceProvider
 
                 $histogram->observe($durationInSeconds, [$type]);
             } catch (Throwable $exception) {
-                Log::error("Error: ", [$exception->getMessage()]);
+                Log::error('Error: ', [$exception->getMessage()]);
             }
         });
     }
