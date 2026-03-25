@@ -3,11 +3,11 @@
         "gemini"
     ],
     "guidelines": true,
-    "herd_mcp": false,
     "mcp": true,
     "nightwatch_mcp": false,
     "sail": true,
     "skills": [
+        "laravel-best-practices",
         "pest-testing",
         "tailwindcss-development"
     ]
