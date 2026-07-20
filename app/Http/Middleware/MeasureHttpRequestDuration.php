@@ -39,7 +39,7 @@ final class MeasureHttpRequestDuration
                 );
 
                 // Normalize URI to avoid cardinality explosion (e.g. replace IDs with route param keys)
-                $uri = $request->route() ? $request->route()->uri() : $request->getPathInfo();
+                $uri = $request->route() ? $request->route()->uri() : 'unmatched_route';
 
                 $histogram->observe($duration, [
                     $request->method(),

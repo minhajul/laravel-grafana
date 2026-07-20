@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
@@ -28,10 +30,10 @@ final class AppServiceProvider extends ServiceProvider
         }
 
         Prometheus::addGauge('users_count')
-            ->value(fn () => \App\Models\User::count());
+            ->value(fn () => Cache::remember('prometheus_users_count', 300, fn () => \App\Models\User::count()));
 
         Prometheus::addGauge('datapoints_count')
-            ->value(fn () => \App\Models\Datapoint::count());
+            ->value(fn () => Cache::remember('prometheus_datapoints_count', 300, fn () => \App\Models\Datapoint::count()));
 
         try {
             $registry = app(CollectorRegistry::class);
@@ -48,14 +50,12 @@ final class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        static $recording = false;
-
-        DB::listen(function ($query) use ($histogram, &$recording) {
-            if ($recording) {
+        DB::listen(function ($query) use ($histogram) {
+            if (Context::has('prometheus_db_recording')) {
                 return;
             }
 
-            $recording = true;
+            Context::add('prometheus_db_recording', true);
 
             $durationInSeconds = $query->time / 1000;
 
@@ -66,7 +66,7 @@ final class AppServiceProvider extends ServiceProvider
             } catch (Throwable $exception) {
                 Log::error('Error recording DB query duration: ', [$exception->getMessage()]);
             } finally {
-                $recording = false;
+                Context::forget('prometheus_db_recording');
             }
         });
     }

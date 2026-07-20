@@ -15,13 +15,16 @@ scrape_configs:
           - localhost
         labels:
           job: laravel
-          __path__: /var/log/laravel/laravel-json.log
+          __path__: /var/log/laravel/*.log
     pipeline_stages:
-      - json:
-          expressions:
-            level: level_name
-            message: message
-            channel: channel
-      - labels:
-          level: level
-          channel: channel
+      - match:
+          selector: '{job="laravel"} |~ "^{"'
+          stages:
+            - json:
+                expressions:
+                  level: level_name
+                  message: message
+                  channel: channel
+            - labels:
+                level: level
+                channel: channel
