@@ -20,9 +20,6 @@ final class AppServiceProvider extends ServiceProvider
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         if ($this->app->runningInConsole() || ! $this->app->bound(CollectorRegistry::class)) {
@@ -44,7 +41,15 @@ final class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        DB::listen(function ($query) use ($histogram) {
+        static $recording = false;
+
+        DB::listen(function ($query) use ($histogram, &$recording) {
+            if ($recording) {
+                return;
+            }
+
+            $recording = true;
+
             $durationInSeconds = $query->time / 1000;
 
             $type = mb_strtolower(strtok($query->sql, ' '));
@@ -53,6 +58,8 @@ final class AppServiceProvider extends ServiceProvider
                 $histogram->observe($durationInSeconds, [$type]);
             } catch (Throwable $exception) {
                 Log::error('Error recording DB query duration: ', [$exception->getMessage()]);
+            } finally {
+                $recording = false;
             }
         });
     }

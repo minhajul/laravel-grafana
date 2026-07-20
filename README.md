@@ -64,7 +64,7 @@ Ensure your project config files match this structure for the stack to function 
 
 | Service         | Local Address           | Internal Docker Address | Description                         |
 |:----------------|:------------------------|:------------------------|:------------------------------------|
-| **Laravel App** | `http://localhost:80`   | `laravel.test:80`       | Main Application                    |
+| **Laravel App** | `http://localhost:80`   | `laravel.test:8000`     | Main Application                    |
 | **Grafana**     | `http://localhost:3000` | `grafana:3000`          | Dashboards (Login: `admin`/`admin`) |
 | **Prometheus**  | `http://localhost:9090` | `prometheus:9090`       | Metrics Scraper                     |
 | **Loki**        | `http://localhost:3100` | `loki:3100`             | Log Aggregation API                 |
