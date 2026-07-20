@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Prometheus\CollectorRegistry;
+use Spatie\Prometheus\Facades\Prometheus;
 use Throwable;
 
 final class AppServiceProvider extends ServiceProvider
@@ -25,6 +26,12 @@ final class AppServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole() || ! $this->app->bound(CollectorRegistry::class)) {
             return;
         }
+
+        Prometheus::addGauge('users_count')
+            ->value(fn () => \App\Models\User::count());
+
+        Prometheus::addGauge('datapoints_count')
+            ->value(fn () => \App\Models\Datapoint::count());
 
         try {
             $registry = app(CollectorRegistry::class);
