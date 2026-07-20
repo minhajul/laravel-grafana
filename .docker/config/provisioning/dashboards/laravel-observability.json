@@ -30,7 +30,7 @@
         "y": 0
       },
       "id": 5,
-      "title": "Total Registered Users",
+      "title": "Total Users",
       "type": "stat",
       "datasource": {
         "type": "prometheus",
@@ -75,7 +75,7 @@
         "y": 0
       },
       "id": 6,
-      "title": "Total Datapoint Records",
+      "title": "Total Datapoints",
       "type": "stat",
       "datasource": {
         "type": "prometheus",
@@ -225,7 +225,7 @@
         "y": 4
       },
       "id": 2,
-      "title": "95th Percentile HTTP Response Latency",
+      "title": "HTTP Response Latency (95th Percentile)",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -303,7 +303,7 @@
         "y": 12
       },
       "id": 4,
-      "title": "95th Percentile DB Query Latency",
+      "title": "DB Query Latency (95th Percentile)",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
