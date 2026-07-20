@@ -137,6 +137,18 @@ services:
             mysql:
                 condition: service_healthy
 
+    blackbox-exporter:
+        image: prom/blackbox-exporter:latest
+        container_name: blackbox-exporter
+        ports:
+            - "9115:9115"
+        volumes:
+            - ./.docker/config/blackbox.yaml:/etc/blackbox_exporter/config.yml
+        command:
+            - '--config.file=/etc/blackbox_exporter/config.yml'
+        networks:
+            - sail
+
 networks:
     sail:
         driver: bridge
