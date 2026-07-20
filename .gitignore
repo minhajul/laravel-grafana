@@ -6,8 +6,8 @@
 /storage/*.key
 /vendor
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -20,3 +20,10 @@ yarn-error.log
 /.vscode
 
 .DS_Store
+
+# AI Code Assistants
+/.claude
+/.gemini
+
+# Laravel Cache
+/bootstrap/cache/*.php
