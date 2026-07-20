@@ -30,7 +30,7 @@ RUN apt-get update \
        php8.4-intl php8.4-readline \
        php8.4-ldap \
        php8.4-msgpack php8.4-igbinary php8.4-redis php8.4-swoole \
-       php8.4-memcached php8.4-pcov php8.4-xdebug \
+       php8.4-memcached php8.4-pcov php8.4-xdebug php8.4-opentelemetry \
     # 3. Install Composer
     && curl -sLS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
     # 4. Install Node.js & Yarn

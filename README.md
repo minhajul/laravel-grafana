@@ -1,114 +1,145 @@
 ## Laravel Grafana Observability Stack
 
-A production-ready Docker environment for Laravel 12 (PHP 8.4) integrated with a full Observability stack. This project
-monitors application performance, infrastructure health, and logs using **Grafana**, **Prometheus** and **Loki**.
+A production-ready Docker environment for Laravel 12/13 (PHP 8.4) integrated with a full Observability stack. This
+project monitors application performance, host infrastructure health, database metrics, and distributed request tracing
+using **Grafana**, **Prometheus**, **Loki**, and **Tempo**.
+
+---
 
 ### Architecture
 
-* **App:** Laravel 12 running on PHP 8.4 (via Laravel Sail).
-* **Database:** MySQL 8.0.
-* **Metrics:**
-    * **Prometheus:** Scrapes metrics from the app and infrastructure.
-    * **Laravel Exporter:** Custom instrumentation for Database Query timing.
-* **Logs:**
-    * **Promtail:** tails `storage/logs/laravel.log` and pushes to Loki.
-    * **Loki:** Stores logs for querying.
-* **Visualization:** Grafana.
-
-### Directory Structure
-
-Ensure your project config files match this structure for the stack to function correctly:
-
 ```text
-/laravel-grafana
-├── docker-compose.yml
-├── .env
-├── .docker/
-│   ├── 8.4/                # Custom PHP 8.4 Dockerfile & configs
-│   └── config/             # Observability Configs
-│       ├── grafana.ini
-│       ├── local-config.yaml (Loki)
-│       ├── prometheus.yml
-│       └── promtail.yaml
-└── storage/
-    └── logs/               # Mounted to Promtail
+┌─────────────────────────────────── Host / VM ───────────────────────────────────┐
+│                                                                                 │
+│  ┌────────────────┐      ┌────────────────┐      ┌───────────────────────────┐  │
+│  │  Laravel App   ├─────►│  Promtail      │      │  Node Exporter            │  │
+│  │  (OTel Trace)  │      │  (Logs Tail)   │      │  (CPU/RAM/Disk/Network)   │  │
+│  └──────┬─────────┘      └───────┬────────┘      └─────────────┬─────────────┘  │
+│         │                        │                             │                │
+│         │                        │                             │                │
+│  ┌──────▼─────────┐      ┌───────▼────────┐      ┌─────────────▼─────────────┐  │
+│  │  MySQL 8.0     │◄─────┤  MySQL Exporter│      │  Blackbox Exporter        │  │
+│  │  (Database)    │      │  (DB Metrics)  │      │  (HTTP Uptime Probe)      │  │
+│  └────────────────┘      └────────────────┘      └─────────────┬─────────────┘  │
+│                                                                │                │
+└────────────────────────────────────────────────────────────────┼────────────────┘
+                                                                 │
+┌────────────────────────────── Monitoring Stack ────────────────┼────────────────┐
+│                                                                │                │
+│  ┌────────────────┐      ┌────────────────┐      ┌─────────────▼─────────────┐  │
+│  │  Grafana Tempo │      │  Grafana Loki  │      │  Prometheus               │  │
+│  │  (APM Traces)  │      │  (Log Storage) │      │  (Metrics Storage)        │  │
+│  └──────┬─────────┘      └───────┬────────┘      └─────────────┬─────────────┘  │
+│         │                        │                             │                │
+│         └────────────────────────┼──────────────┬──────────────┘                │
+│                                  │              │                               │
+│                          ┌───────▼──────────────▼────┐                          │
+│                          │  Grafana Dashboard        │                          │
+│                          │  (Visualization & Alerts) │                          │
+│                          └───────────────────────────┘                          │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+* **App:** Laravel running on PHP 8.4 (via Laravel Sail) with the OpenTelemetry (OTel) PHP extension.
+* **Database:** MySQL 8.0.
+* **Metrics Scraper:** Prometheus.
+* **APM / Distributed Tracing:** Grafana Tempo.
+* **Logs Collector:** Promtail & Grafana Loki.
+* **Infrastructure Monitoring:** Node Exporter (Host System) & MySQL Exporter (Database Internals).
+* **Synthetic Monitoring:** Blackbox Exporter (External HTTP Uptime/Status `Prober`).
+* **Visualization:** Grafana (Auto-provisioned with `data sources` and dashboard).
+
+---
 
 ### Installation & Setup
 
 1. **Clone the repository** and enter the directory.
 
 2. **Environment Setup:**
-
    ```bash
    cp .env.example .env
    ```
-
-   Ensure `DB_HOST=mysql` and `DB_CONNECTION=mysql`.
+   Ensure `DB_HOST=mysql`, `DB_CONNECTION=mysql`, and verify your OpenTelemetry keys are present at the bottom of the
+   `.env` file.
 
 3. **Start the Stack:**
-   This command builds the custom PHP 8.4 image and starts all monitoring containers.
-
+   This command builds the custom PHP 8.4 image (including the `opentelemetry` PHP extension) and starts all
+   observability containers.
    ```bash
    ./vendor/bin/sail up -d --build
    ```
 
 4. **Install Dependencies & Migrate:**
-
    ```bash
    ./vendor/bin/sail composer run setup
    ./vendor/bin/sail artisan migrate:fresh --seed
    ```
 
+---
+
 ### Services & Ports
 
-| Service         | Local Address           | Internal Docker Address | Description                         |
-|:----------------|:------------------------|:------------------------|:------------------------------------|
-| **Laravel App** | `http://localhost:80`   | `laravel.test:8000`     | Main Application                    |
-| **Grafana**     | `http://localhost:3000` | `grafana:3000`          | Dashboards (Login: `admin`/`admin`) |
-| **Prometheus**  | `http://localhost:9090` | `prometheus:9090`       | Metrics Scraper                     |
-| **Loki**        | `http://localhost:3100` | `loki:3100`             | Log Aggregation API                 |
-| **MySQL**       | `localhost:3306`        | `mysql:3306`            | Database                            |
+All services are accessible on the host machine using these local ports:
 
-### Configuring Grafana (First Run)
+| Service               | Local Port              | Internal DNS             | Description                                 |
+|:----------------------|:------------------------|:-------------------------|:--------------------------------------------|
+| **Laravel App**       | `80` (mapped to `8000`) | `laravel.test:8000`      | Main PHP Application                        |
+| **Grafana**           | `3000`                  | `grafana:3000`           | Visualization Dashboard (`admin` / `admin`) |
+| **Prometheus**        | `9090`                  | `prometheus:9090`        | Metrics Scraper & TSDB                      |
+| **Loki**              | `3100`                  | `loki:3100`              | Log Aggregator                              |
+| **Tempo**             | `3200` / `4318`         | `tempo:3200`             | APM / OTel Trace Engine (HTTP receiver)     |
+| **MySQL**             | `3306`                  | `mysql:3306`             | MySQL Database                              |
+| **Node Exporter**     | `9100`                  | `node-exporter:9100`     | Host VM CPU/RAM metrics                     |
+| **MySQL Exporter**    | `9104`                  | `mysql-exporter:9104`    | DB performance variables                    |
+| **Blackbox Exporter** | `9115`                  | `blackbox-exporter:9115` | External endpoint uptime check              |
 
-1. Login to Grafana at **[http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)** (Default:
-   `admin` / `admin`).
-2. Go to **Connections** $\rightarrow$ **Data Sources** $\rightarrow$ **Add new data source**.
+---
 
-### 1\. Add Loki (Logs)
+### Configuring Grafana
 
-* **Name:** Loki
-* **URL:** `http://loki:3100`  *(Note: Do not use localhost)*
-* Click **Save & Test**.
+**No configuration is needed!**
+On startup, Grafana automatically provisions:
 
-### 2\. Add Prometheus (Metrics)
+* **Prometheus**, **Loki**, and **Tempo** data sources.
+* A preloaded **Laravel Application Observability** dashboard containing real-time application throughput, database
+  health, logs, traces, and host hardware resource statistics.
 
-* **Name:** Prometheus
-* **URL:** `http://prometheus:9090`
-* Click **Save & Test**.
+Simply visit **[http://localhost:3000](http://localhost:3000)** and log in with user `admin` and password `admin`.
+
+---
 
 ### How to Monitor
 
-#### 1\. Viewing Logs (Loki)
+#### 1. Real-time Logs (Loki)
 
-To debug application errors:
+Logs are parsed as JSON. In Grafana:
 
-1. Go to **Explore** (Compass Icon) in Grafana.
-2. Select **Loki** from the dropdown.
-3. Filter by job: `{job="laravel"}`.
-4. Click **Run Query** to see real-time logs from `storage/logs/laravel.log`.
+* Go to **Explore** $\rightarrow$ select **Loki** datasource $\rightarrow$ enter `{job="laravel"}` to query application
+  log events.
 
-#### 2\. Viewing Database Performance (Prometheus)
+#### 2. Uptime Status (Blackbox)
 
-To see how long SQL queries are taking:
+Verify external availability:
 
-1. Go to **Explore** and select **Prometheus**.
-2. Use the following PromQL queries:
-    * **95th Percentile Query Latency:**
-      `histogram_quantile(0.95, sum(rate(laravel_database_query_duration_seconds_bucket[5m])) by (le))`
-    * **Queries Per Second:**
-      `sum(rate(laravel_database_query_duration_seconds_count[1m]))`
+* Query `probe_success{job="blackbox"}`. A value of `1` indicates your Laravel homepage is up and returning `2xx` HTTP
+  codes.
+* Monitor endpoint latencies using `probe_duration_seconds`.
+
+#### 3. Distributed Tracing / APM (Tempo)
+
+To analyze request trace timelines:
+
+* Go to **Explore** $\rightarrow$ select **Tempo** datasource.
+* Search for traces or view request trace waterfalls directly within panels, showing latency spent in middlewares,
+  views, and database queries.
+
+#### 4. Host & Database Health
+
+* System health: Query `node_cpu_seconds_total`, `node_memory_Active_bytes`, etc.
+* Database performance: Query `mysql_global_status_threads_connected`, `mysql_global_status_slow_queries`, etc.
+
+---
 
 ### Data Persistence
 
@@ -117,27 +148,13 @@ This stack uses **Named Volumes** to persist data even if containers are stopped
 * **Database:** `sail-mysql`
 * **Logs (Loki):** `loki-data`
 * **Metrics (Prometheus):** `prometheus-data`
+* **Traces (Tempo):** `tempo-data`
 * **Grafana Settings:** `grafana-data`
 
 **To Reset Everything (Caution):**
-If you want to wipe the database and all metrics/logs to start fresh:
 
 ```bash
 ./vendor/bin/sail down -v
 ```
 
-*(The `-v` flag deletes all volumes).*
-
-### Troubleshooting
-
-**"Loki: `Ingester` not ready"**
-
-* Loki takes 30–60 seconds to initialize its storage ring on startup. Wait a minute and refresh.
-  **"Laravel Logs not showing in Grafana"**
-* Ensure the `storage/logs` directory has read permissions.
-* Check Promtail logs: `docker-compose logs -f promtail`.
-
-**"Metrics page is empty"**
-
-* Visit `http://localhost/prometheus`. If it's empty, ensure you have hit the application (`http://localhost`) at least
-  once to generate traffic.
+*(The `-v` flag deletes all volumes, wiping databases, historical metrics, and trace logs).*

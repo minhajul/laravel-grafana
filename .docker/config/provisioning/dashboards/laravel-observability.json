@@ -25,7 +25,7 @@
       "collapsed": false,
       "gridPos": {
         "h": 4,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 0
       },
@@ -70,8 +70,8 @@
       "collapsed": false,
       "gridPos": {
         "h": 4,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 8,
         "y": 0
       },
       "id": 6,
@@ -105,6 +105,72 @@
               {
                 "color": "blue",
                 "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 8,
+      "title": "Application Status",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "editorMode": "code",
+          "expr": "probe_success{job=\"blackbox\"}",
+          "legendFormat": "Status",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "UP"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
               }
             ]
           }
