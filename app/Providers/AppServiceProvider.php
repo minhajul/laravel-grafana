@@ -29,24 +29,30 @@ final class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        DB::listen(function ($query) {
+        try {
+            $registry = app(CollectorRegistry::class);
+
+            $histogram = $registry->getOrRegisterHistogram(
+                'laravel',
+                'database_query_duration_seconds',
+                'Duration of database queries',
+                ['sql_type']
+            );
+        } catch (Throwable $exception) {
+            Log::error('Failed to register Prometheus DB histogram: ', [$exception->getMessage()]);
+
+            return;
+        }
+
+        DB::listen(function ($query) use ($histogram) {
             $durationInSeconds = $query->time / 1000;
 
             $type = mb_strtolower(strtok($query->sql, ' '));
 
             try {
-                $registry = app(CollectorRegistry::class);
-
-                $histogram = $registry->getOrRegisterHistogram(
-                    'laravel',
-                    'database_query_duration_seconds',
-                    'Duration of database queries',
-                    ['sql_type']
-                );
-
                 $histogram->observe($durationInSeconds, [$type]);
             } catch (Throwable $exception) {
-                Log::error('Error: ', [$exception->getMessage()]);
+                Log::error('Error recording DB query duration: ', [$exception->getMessage()]);
             }
         });
     }

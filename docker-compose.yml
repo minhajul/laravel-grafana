@@ -93,6 +93,7 @@ services:
         user: "0" # (0 = root)
         volumes:
             - ./.docker/config/grafana.ini:/etc/grafana/grafana.ini
+            - ./.docker/config/provisioning:/etc/grafana/provisioning:ro
             # Use a named volume for data persistence to avoid permission issues
             - grafana-data:/var/lib/grafana
         ports:

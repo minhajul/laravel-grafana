@@ -5,8 +5,6 @@ declare(strict_types=1);
 use App\Http\Controllers\DatapointController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Prometheus\CollectorRegistry;
-use Prometheus\RenderTextFormat;
 
 Route::get('/', function () {
     return response()->json([
@@ -26,15 +24,4 @@ Route::get('/log-test', function () {
         'status' => 'OK',
         'message' => 'Log has been sent.',
     ]);
-});
-
-Route::get('/prometheus', function () {
-    $registry = app(CollectorRegistry::class);
-
-    $renderer = new RenderTextFormat();
-
-    $result = $renderer->render($registry->getMetricFamilySamples());
-
-    return response($result)
-        ->header('Content-Type', RenderTextFormat::MIME_TYPE);
 });
