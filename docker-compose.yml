@@ -149,6 +149,20 @@ services:
         networks:
             - sail
 
+    tempo:
+        image: grafana/tempo:latest
+        container_name: tempo
+        command: ["-config.file=/etc/tempo.yaml"]
+        volumes:
+            - ./.docker/config/tempo.yaml:/etc/tempo.yaml
+            - tempo-data:/var/tempo
+        ports:
+            - "3200:3200"  # Tempo API
+            - "4317:4317"  # OTLP gRPC
+            - "4318:4318"  # OTLP HTTP
+        networks:
+            - sail
+
 networks:
     sail:
         driver: bridge
@@ -157,5 +171,6 @@ volumes:
     loki-data:
     grafana-data:
     prometheus-data:
+    tempo-data:
     sail-mysql:
         driver: local

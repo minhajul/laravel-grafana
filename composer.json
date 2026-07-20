@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "keepsuit/laravel-opentelemetry": "^2.2",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
         "spatie/laravel-prometheus": "^1.3"
