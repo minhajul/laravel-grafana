@@ -105,6 +105,38 @@ services:
         networks:
             - sail
 
+    node-exporter:
+        image: prom/node-exporter:latest
+        container_name: node-exporter
+        ports:
+            - "9100:9100"
+        volumes:
+            - '/proc:/host/proc:ro'
+            - '/sys:/host/sys:ro'
+            - '/:/rootfs:ro'
+        command:
+            - '--path.procfs=/host/proc'
+            - '--path.sysfs=/host/sys'
+            - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)'
+        networks:
+            - sail
+
+    mysql-exporter:
+        image: prom/mysqld-exporter:latest
+        container_name: mysql-exporter
+        environment:
+            - MYSQLD_EXPORTER_PASSWORD=${DB_PASSWORD:-password}
+        command:
+            - '--mysqld.username=root'
+            - '--mysqld.address=mysql:3306'
+        ports:
+            - "9104:9104"
+        networks:
+            - sail
+        depends_on:
+            mysql:
+                condition: service_healthy
+
 networks:
     sail:
         driver: bridge

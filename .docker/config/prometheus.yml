@@ -8,3 +8,11 @@ scrape_configs:
       - targets: ['laravel.test:8000']
         # Ensure you have a metrics exporter package installed in Laravel
         # or change port to 9090 if using a sidecar exporter.
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: 'mysql-exporter'
+    static_configs:
+      - targets: ['mysql-exporter:9104']
