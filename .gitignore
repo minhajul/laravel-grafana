@@ -27,3 +27,6 @@ yarn-error.log
 
 # Laravel Cache
 /bootstrap/cache/*.php
+
+
+.mcp.json
