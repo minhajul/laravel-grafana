@@ -6,6 +6,26 @@
                 "artisan",
                 "boost:mcp"
             ]
+        },
+        "grafana": {
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-i",
+                "--network=host",
+                "-e",
+                "GRAFANA_URL",
+                "-e",
+                "GRAFANA_SERVICE_ACCOUNT_TOKEN",
+                "mcp/grafana",
+                "-t",
+                "stdio"
+            ],
+            "env": {
+                "GRAFANA_URL": "http://localhost:3000",
+                "GRAFANA_SERVICE_ACCOUNT_TOKEN": "will-set-later"
+            }
         }
     }
 }
