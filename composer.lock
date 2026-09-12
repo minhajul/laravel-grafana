@@ -1182,16 +1182,16 @@
         },
         {
             "name": "keepsuit/laravel-opentelemetry",
-            "version": "2.2.4",
+            "version": "2.2.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keepsuit/laravel-opentelemetry.git",
-                "reference": "2cbd0cbcc0d17890bc17ea28d44a029834d1d11b"
+                "reference": "8a0987186eb5cf82b3f7fc61fc9e5c568ea19d3d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keepsuit/laravel-opentelemetry/zipball/2cbd0cbcc0d17890bc17ea28d44a029834d1d11b",
-                "reference": "2cbd0cbcc0d17890bc17ea28d44a029834d1d11b",
+                "url": "https://api.github.com/repos/keepsuit/laravel-opentelemetry/zipball/8a0987186eb5cf82b3f7fc61fc9e5c568ea19d3d",
+                "reference": "8a0987186eb5cf82b3f7fc61fc9e5c568ea19d3d",
                 "shasum": ""
             },
             "require": {
@@ -1214,7 +1214,7 @@
             "require-dev": {
                 "guzzlehttp/guzzle": "^7.3",
                 "guzzlehttp/psr7": "^2.0",
-                "guzzlehttp/test-server": "^0.5",
+                "guzzlehttp/test-server": "^0.7",
                 "larastan/larastan": "^3.0",
                 "laravel/octane": "^2.13",
                 "laravel/pint": "^1.18",
@@ -1276,9 +1276,9 @@
             ],
             "support": {
                 "issues": "https://github.com/keepsuit/laravel-opentelemetry/issues",
-                "source": "https://github.com/keepsuit/laravel-opentelemetry/tree/2.2.4"
+                "source": "https://github.com/keepsuit/laravel-opentelemetry/tree/2.2.5"
             },
-            "time": "2026-07-07T08:02:16+00:00"
+            "time": "2026-09-11T10:01:17+00:00"
         },
         {
             "name": "laravel/framework",
