@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Foundation\Http\HealthCheck;
 use Illuminate\Http\Request;
 use Prometheus\CollectorRegistry;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,17 +37,25 @@ final class MeasureHttpRequestDuration
      */
     private function shouldMeasure(Request $request): bool
     {
-        if (! config('prometheus.enabled')) {
+        if (! config('prometheus.enabled') || $this->isHealthCheck($request)) {
             return false;
         }
 
-        $excludedPaths = collect(config('prometheus.urls', []))
+        $metricsPaths = collect(config('prometheus.urls', []))
             ->map(fn (string $url): string => mb_trim($url, '/'))
-            ->push('up')
             ->values()
             ->all();
 
-        return ! $request->is(...$excludedPaths);
+        return ! $request->is(...$metricsPaths);
+    }
+
+    /**
+     * Whether the request hit the health route registered by withRouting(health: ...),
+     * identified by its controller so it stays excluded if its path changes.
+     */
+    private function isHealthCheck(Request $request): bool
+    {
+        return $request->route()?->getControllerClass() === HealthCheck::class;
     }
 
     /**

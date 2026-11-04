@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Http\HealthCheck;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Route;
 use Prometheus\CollectorRegistry;
@@ -47,6 +48,16 @@ it('does not record requests to excluded paths', function (string $path) {
     'metrics endpoint' => ['/prometheus'],
     'health check' => ['/up'],
 ]);
+
+it('does not record requests to the health check at a custom path', function () {
+    Route::get('/healthz', HealthCheck::class);
+
+    $this->get('/healthz')->assertOk();
+
+    $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());
+
+    expect($metrics)->not->toContain('laravel_http_request_duration_seconds');
+});
 
 it('does not record requests to a custom metrics url', function () {
     config(['prometheus.urls' => ['default' => '/internal/metrics']]);
