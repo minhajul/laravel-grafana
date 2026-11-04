@@ -6,7 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Datapoint;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 
 final class DatapointTableSeeder extends Seeder
 {
@@ -20,21 +20,16 @@ final class DatapointTableSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = now()->toImmutable();
+        $factory = Datapoint::factory();
+        $newest = now();
+        $oldest = $newest->copy()->subDays(self::SPREAD_OVER_DAYS);
 
-        Datapoint::factory()
-            ->times(10000)
-            ->make()
-            ->map(function (Datapoint $datapoint) use ($now): array {
-                $createdAt = $now->subSeconds(fake()->numberBetween(0, self::SPREAD_OVER_DAYS * 86400));
+        LazyCollection::times(10000, function () use ($factory, $oldest, $newest): array {
+            $createdAt = fake()->dateTimeBetween($oldest, $newest);
 
-                return [
-                    ...$datapoint->getAttributes(),
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ];
-            })
+            return [...$factory->raw(), 'created_at' => $createdAt, 'updated_at' => $createdAt];
+        })
             ->chunk(1000)
-            ->each(fn (Collection $chunk): bool => Datapoint::query()->insert($chunk->all()));
+            ->each(fn (LazyCollection $chunk): bool => Datapoint::query()->insert($chunk->all()));
     }
 }
