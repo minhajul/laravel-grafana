@@ -1,20 +1,48 @@
 apiVersion: 1
 
+# Explicit uids keep dashboard, alert rule and cross-datasource references stable.
+# "$$" escapes "$" so Grafana does not treat ${...} as an environment variable.
 datasources:
   - name: Prometheus
+    uid: Prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
     jsonData:
       httpMethod: POST
+      # Matches the global scrape_interval so $__rate_interval is calculated correctly.
+      timeInterval: 15s
   - name: Loki
+    uid: Loki
     type: loki
     access: proxy
     url: http://loki:3100
     jsonData:
       maxLines: 1000
+      # Laravel's JsonFormatter writes the trace id shared by keepsuit/laravel-opentelemetry
+      # as "context":{"trace_id":"<32 hex chars>",...}; turn it into a link to the trace.
+      derivedFields:
+        - name: TraceID
+          matcherType: regex
+          matcherRegex: '"trace_id":"([0-9a-f]{32})"'
+          datasourceUid: Tempo
+          url: '$${__value.raw}'
+          urlDisplayLabel: View trace
   - name: Tempo
+    uid: Tempo
     type: tempo
     access: proxy
     url: http://tempo:3200
+    jsonData:
+      nodeGraph:
+        enabled: true
+      # Jump from a span to the Laravel log lines that carry the same trace id.
+      tracesToLogsV2:
+        datasourceUid: Loki
+        spanStartTimeShift: '-5m'
+        spanEndTimeShift: '5m'
+        filterByTraceID: true
+        filterBySpanID: false
+        customQuery: true
+        query: '{job="laravel"} |= "$${__trace.traceId}"'
