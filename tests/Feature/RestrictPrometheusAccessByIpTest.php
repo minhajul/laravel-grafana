@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-beforeEach(function () {
-    config(['prometheus.cache' => null]);
-});
+use Dotenv\Dotenv;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Bootstrap\LoadConfiguration;
+use Illuminate\Routing\Route;
 
 /**
  * Run the callback with the given environment variables set, where null means unset,
@@ -85,28 +87,33 @@ it('returns 403 when only a spoofed X-Forwarded-For header is allowed', function
     $response->assertForbidden();
 });
 
-it('serves metrics to loopback and Docker network clients by default', function (string $clientIp) {
+it('serves metrics only to loopback by default', function (string $clientIp, int $expectedStatus) {
     config(['prometheus.allowed_ips' => prometheusConfigWithEnvironment(['PROMETHEUS_ALLOWED_IPS' => null])['allowed_ips']]);
 
     $response = $this->withServerVariables(['REMOTE_ADDR' => $clientIp])->get('/prometheus');
 
-    $response->assertOk();
+    $response->assertStatus($expectedStatus);
 })->with([
-    'loopback' => '127.0.0.1',
-    'docker bridge network' => '172.18.0.5',
-    'docker desktop gateway' => '192.168.65.1',
-    'custom docker address pool' => '10.0.0.5',
+    'loopback' => ['127.0.0.1', 200],
+    'private proxy address' => ['10.0.0.5', 403],
+    'docker bridge network' => ['172.18.0.5', 403],
+    'public address' => ['203.0.113.10', 403],
 ]);
 
-it('returns 403 to public IPs by default', function (string $clientIp) {
-    config(['prometheus.allowed_ips' => prometheusConfigWithEnvironment(['PROMETHEUS_ALLOWED_IPS' => null])['allowed_ips']]);
+it('lets the docker-compose Prometheus scrape with the .env.example allowlist', function (string $clientIp, int $expectedStatus) {
+    $exampleAllowlist = Dotenv::parse((string) file_get_contents(base_path('.env.example')))['PROMETHEUS_ALLOWED_IPS'];
+    config(['prometheus.allowed_ips' => prometheusConfigWithEnvironment(['PROMETHEUS_ALLOWED_IPS' => $exampleAllowlist])['allowed_ips']]);
 
     $response = $this->withServerVariables(['REMOTE_ADDR' => $clientIp])->get('/prometheus');
 
-    $response->assertForbidden();
+    $response->assertStatus($expectedStatus);
 })->with([
-    'documentation range' => '203.0.113.10',
-    'just outside 172.16.0.0/12' => '172.32.0.1',
+    'loopback' => ['127.0.0.1', 200],
+    'docker bridge network' => ['172.18.0.5', 200],
+    'docker desktop gateway' => ['192.168.65.1', 200],
+    'custom docker address pool' => ['10.0.0.5', 200],
+    'documentation range' => ['203.0.113.10', 403],
+    'just outside 172.16.0.0/12' => ['172.32.0.1', 403],
 ]);
 
 it('reads a comma separated allowlist from PROMETHEUS_ALLOWED_IPS', function () {
@@ -115,10 +122,25 @@ it('reads a comma separated allowlist from PROMETHEUS_ALLOWED_IPS', function () 
     expect($config['allowed_ips'])->toBe(['192.0.2.7', '10.0.0.0/8']);
 });
 
-it('does not register the metrics endpoint when PROMETHEUS_ENABLED is false', function () {
-    withEnvironment(['PROMETHEUS_ENABLED' => 'false'], fn () => $this->refreshApplication());
+it('registers the metrics endpoint only when prometheus is enabled', function (bool $enabled) {
+    // Boot a separate app and override the config right after it loads, since .env
+    // values would win over environment variables set from inside the test.
+    $app = require base_path('bootstrap/app.php');
+    $app->afterBootstrapping(LoadConfiguration::class, fn (Application $app) => $app['config']->set('prometheus.enabled', $enabled));
+    $app->make(Kernel::class)->bootstrap();
 
-    $response = $this->get('/prometheus');
+    $metricsRouteIsRegistered = collect($app['router']->getRoutes()->getRoutes())
+        ->contains(fn (Route $route): bool => $route->uri() === 'prometheus');
 
-    $response->assertNotFound();
-});
+    expect($metricsRouteIsRegistered)->toBe($enabled);
+})->with([
+    'enabled' => true,
+    'disabled' => false,
+]);
+
+it('reads PROMETHEUS_ENABLED as a boolean', function (string $value, bool $enabled) {
+    expect(prometheusConfigWithEnvironment(['PROMETHEUS_ENABLED' => $value])['enabled'])->toBe($enabled);
+})->with([
+    'true' => ['true', true],
+    'false' => ['false', false],
+]);

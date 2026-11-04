@@ -128,15 +128,16 @@ Host ports are bound to `127.0.0.1` only. Services without a host port are reach
 | Key                                   | Default                         | Purpose                                                                 |
 |:--------------------------------------|:--------------------------------|:------------------------------------------------------------------------|
 | `PROMETHEUS_ENABLED`                  | `true`                          | Register the `/prometheus` endpoint and the metric collectors           |
-| `PROMETHEUS_ALLOWED_IPS`              | loopback + private ranges       | Comma-separated IPs/CIDR ranges allowed to scrape `/prometheus`         |
+| `PROMETHEUS_ALLOWED_IPS`              | loopback only                   | Comma-separated IPs/CIDR ranges allowed to scrape `/prometheus`; `.env.example` adds Docker's private ranges |
 | `PROMETHEUS_STORAGE`                  | `redis`                         | `redis`, or `memory` (used by the test suite)                           |
 | `PROMETHEUS_REDIS_CONNECTION`         | `default`                       | Redis connection from `config/database.php` used for metric storage    |
 | `LOG_DAILY_DAYS`                      | `14`                            | Days of `laravel-json-YYYY-MM-DD.log` files to keep                     |
 | `GRAFANA_ADMIN_USER` / `_PASSWORD`    | `admin` / `admin`               | Grafana admin login (applied only when `grafana-data` is first created) |
 | `MYSQL_EXPORTER_PASSWORD`             | `exporter-password`             | Password of the least-privileged `exporter` MySQL user                  |
 
-In production behind a proxy, set `PROMETHEUS_ALLOWED_IPS` to your scraper's address and configure trusted proxies,
-otherwise the private-range default lets all proxied traffic through.
+In production, set `PROMETHEUS_ALLOWED_IPS` to your scraper's address rather than copying the private ranges from
+`.env.example`, and configure trusted proxies: behind a proxy on a private network, every visitor appears to come from
+the proxy's private IP.
 
 ---
 
