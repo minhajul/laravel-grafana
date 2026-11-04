@@ -96,7 +96,7 @@ performance, host infrastructure health, database metrics, logs and distributed 
 | `GET /api/v1/datapoints?page=1&per_page=20`    | Paginated datapoints (`per_page` 1–100), standard Laravel `data` / `links` / `meta`   |
 | `GET /up`                                      | Laravel health check, probed by the Blackbox Exporter                                 |
 | `GET /prometheus`                              | Prometheus metrics, restricted to `PROMETHEUS_ALLOWED_IPS`                            |
-| `GET /log-test`                                | Writes sample info/error log lines (only registered when `APP_ENV=local`)             |
+| `GET /log-test`                                | Writes sample info/error log lines (returns 404 unless `APP_ENV=local`)              |
 
 Each datapoint's `value` is returned typed according to its `cast` column (`string`, `int`, `float`, `bool`).
 
