@@ -1,9 +1,18 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "minhajul/laravel-grafana",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "A Laravel application wired to a Grafana observability stack: Prometheus metrics, Loki logs and Tempo traces.",
+    "keywords": [
+        "laravel",
+        "grafana",
+        "prometheus",
+        "loki",
+        "tempo",
+        "opentelemetry",
+        "observability",
+        "monitoring"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.4",

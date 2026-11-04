@@ -21,9 +21,11 @@ yarn-error.log
 
 .DS_Store
 
-# AI Code Assistants
-/.claude
-/.gemini
+# AI Code Assistants (keep the Laravel Boost generated skills and settings tracked)
+/.claude/*
+!/.claude/skills/
+/.gemini/*
+!/.gemini/settings.json
 
 # Laravel Cache
 /bootstrap/cache/*.php
