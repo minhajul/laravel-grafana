@@ -26,8 +26,7 @@ services:
                 condition: service_healthy
 
     mysql:
-        image: 'mysql:8.0'
-        command: --default-authentication-plugin=mysql_native_password
+        image: 'mysql:8.4.13'
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
@@ -43,7 +42,7 @@ services:
         networks:
             - sail
         healthcheck:
-            test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD}"]
             retries: 3
             timeout: 5s
 
