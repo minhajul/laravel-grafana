@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use Prometheus\CollectorRegistry;
@@ -41,6 +42,16 @@ it('records the duration of database queries', function () {
     $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());
 
     expect($metrics)->toContain('laravel_database_query_duration_seconds_count{sql_type="select"} 1');
+});
+
+it('puts sub-millisecond queries into sub-millisecond buckets', function () {
+    event(new QueryExecuted('select 1', [], 0.2, DB::connection()));
+
+    $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());
+
+    expect($metrics)
+        ->toContain('laravel_database_query_duration_seconds_bucket{sql_type="select",le="0.0001"} 0')
+        ->toContain('laravel_database_query_duration_seconds_bucket{sql_type="select",le="0.00025"} 1');
 });
 
 it('keeps running queries and reports the failure once while the metric storage is unavailable', function () {

@@ -27,6 +27,16 @@ final class PrometheusServiceProvider extends ServiceProvider
      */
     private const int STORAGE_FAILURE_PAUSE_SECONDS = 30;
 
+    /**
+     * Upper bounds, in seconds, of the query duration buckets. Most queries finish well
+     * under a millisecond, below the first default bucket (5 ms), so start at 0.1 ms.
+     *
+     * @var list<float>
+     */
+    private const array QUERY_DURATION_BUCKETS = [
+        0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0,
+    ];
+
     private ?CarbonInterface $queryMetricsPausedUntil = null;
 
     /**
@@ -81,6 +91,7 @@ final class PrometheusServiceProvider extends ServiceProvider
                     'database_query_duration_seconds',
                     'Duration of database queries',
                     ['sql_type'],
+                    self::QUERY_DURATION_BUCKETS,
                 )
                 ->observe($query->time / 1000, [mb_strtolower(strtok($query->sql, ' '))]);
         } catch (Throwable $exception) {
