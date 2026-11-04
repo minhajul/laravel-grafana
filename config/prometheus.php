@@ -66,7 +66,8 @@ return [
 
     /**
      * The connection from the "redis" section of config/database.php that is used
-     * when the storage above is "redis". Keys are prefixed with "PROMETHEUS_".
+     * when the storage above is "redis". It must use the phpredis client. Keys get
+     * the connection's own prefix followed by "PROMETHEUS_".
      */
     'redis_connection' => env('PROMETHEUS_REDIS_CONNECTION', 'default'),
 ];

@@ -3,13 +3,16 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Redis\Connections\Connection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Redis as RedisFacade;
 use Prometheus\CollectorRegistry;
 use Prometheus\Exception\StorageException;
 use Prometheus\RenderTextFormat;
 use Prometheus\Storage\Adapter;
 use Prometheus\Storage\Redis;
+use Redis as PhpRedis;
 
 it('stores samples recorded through the collector registry in the configured storage', function () {
     app(CollectorRegistry::class)
@@ -21,11 +24,30 @@ it('stores samples recorded through the collector registry in the configured sto
     expect($storedMetrics)->toContain('test_events_total 1');
 });
 
-it('uses redis storage when configured', function () {
-    config(['prometheus.storage' => 'redis']);
+it('uses redis storage on the configured laravel redis connection when configured', function () {
+    $client = Mockery::mock(PhpRedis::class);
+    $client->shouldReceive('isConnected')->andReturnTrue();
+
+    RedisFacade::shouldReceive('connection')->once()->with('metrics')->andReturn(
+        Mockery::mock(Connection::class)->shouldReceive('client')->andReturn($client)->getMock(),
+    );
+
+    config(['prometheus.storage' => 'redis', 'prometheus.redis_connection' => 'metrics']);
     app()->forgetScopedInstances();
 
     expect(app(Adapter::class))->toBeInstanceOf(Redis::class);
+});
+
+it('rejects a redis connection that does not use the phpredis client', function () {
+    RedisFacade::shouldReceive('connection')->andReturn(
+        Mockery::mock(Connection::class)->shouldReceive('client')->andReturn(new stdClass)->getMock(),
+    );
+
+    config(['prometheus.storage' => 'redis']);
+    app()->forgetScopedInstances();
+
+    expect(fn () => app(Adapter::class))
+        ->toThrow(InvalidArgumentException::class, 'needs the phpredis client');
 });
 
 it('rejects an unsupported storage', function () {
@@ -37,6 +59,10 @@ it('rejects an unsupported storage', function () {
 });
 
 it('records the duration of database queries', function () {
+    // The first query lazily runs the migrations; start counting from fresh in-memory storage after it.
+    DB::select('select 0');
+    app()->forgetScopedInstances();
+
     DB::select('select 1');
 
     $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());

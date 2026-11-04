@@ -16,6 +16,7 @@ use Prometheus\CollectorRegistry;
 use Prometheus\Storage\Adapter;
 use Prometheus\Storage\InMemory;
 use Prometheus\Storage\Redis;
+use Redis as PhpRedis;
 use Spatie\Prometheus\Facades\Prometheus;
 use Throwable;
 
@@ -71,11 +72,12 @@ final class PrometheusServiceProvider extends ServiceProvider
             return;
         }
 
+        // Cache stores such as Redis return cached integers as numeric strings, so cast back.
         Prometheus::addGauge('users_count')
-            ->value(fn (): int => Cache::remember('prometheus_users_count', 300, fn (): int => User::query()->count()));
+            ->value(fn (): int => (int) Cache::remember('prometheus_users_count', 300, fn (): int => User::query()->count()));
 
         Prometheus::addGauge('datapoints_count')
-            ->value(fn (): int => Cache::remember('prometheus_datapoints_count', 300, fn (): int => Datapoint::query()->count()));
+            ->value(fn (): int => (int) Cache::remember('prometheus_datapoints_count', 300, fn (): int => Datapoint::query()->count()));
 
         DB::listen(function (QueryExecuted $query): void {
             $this->recordQueryDuration($query);
@@ -134,23 +136,23 @@ final class PrometheusServiceProvider extends ServiceProvider
     }
 
     /**
-     * Build promphp's Redis storage from a connection in config/database.php.
+     * Build promphp's Redis storage on top of a Laravel Redis connection, so it shares
+     * that connection's settings (REDIS_URL, TLS, timeouts, key prefix) and socket.
      *
      * It updates samples with server-side Lua scripts, so concurrent workers never
-     * overwrite each other's increments. It connects lazily on the first write.
+     * overwrite each other's increments. It is built when metrics are first recorded.
      */
     private function makeRedisAdapter(): Redis
     {
-        /** @var array{host?: string, port?: int|string, username?: string|null, password?: string|null, database?: int|string} $connection */
-        $connection = config('database.redis.'.config('prometheus.redis_connection'), []);
+        $connectionName = config('prometheus.redis_connection');
+        $client = $this->app->make('redis')->connection($connectionName)->client();
 
-        return new Redis([
-            'host' => $connection['host'] ?? '127.0.0.1',
-            'port' => (int) ($connection['port'] ?? 6379),
-            'user' => $connection['username'] ?? null,
-            'password' => $connection['password'] ?? null,
-            'database' => (int) ($connection['database'] ?? 0),
-            'persistent_connections' => (bool) config('database.redis.options.persistent', false),
-        ]);
+        if (! $client instanceof PhpRedis) {
+            throw new InvalidArgumentException(
+                "Prometheus Redis storage needs the phpredis client, but connection [{$connectionName}] uses ".get_debug_type($client).'.',
+            );
+        }
+
+        return Redis::fromExistingConnection($client);
     }
 }
