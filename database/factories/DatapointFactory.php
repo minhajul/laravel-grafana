@@ -23,7 +23,7 @@ final class DatapointFactory extends Factory
     {
         return [
             'name' => 'temperature',
-            'value' => fake()->randomFloat(0, 90),
+            'value' => fake()->randomFloat(2, 0, 90),
             'cast' => 'float',
         ];
     }

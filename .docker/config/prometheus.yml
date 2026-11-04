@@ -23,7 +23,8 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-          - http://laravel.test:8000/
+          # Laravel's built-in health route: no session row is written per probe
+          - http://laravel.test:8000/up
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

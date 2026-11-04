@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 LABEL maintainer="Taylor Otwell"
 
 ARG WWWGROUP
-ARG NODE_VERSION=20
+ARG NODE_VERSION=26
 ARG POSTGRES_VERSION=15
 
 WORKDIR /var/www/html
@@ -33,14 +33,10 @@ RUN apt-get update \
        php8.4-memcached php8.4-pcov php8.4-xdebug php8.4-opentelemetry \
     # 3. Install Composer
     && curl -sLS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
-    # 4. Install Node.js & Yarn
+    # 4. Install Node.js
     && curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g npm \
-    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /etc/apt/keyrings/yarn.gpg > /dev/null \
-    && echo "deb [signed-by=/etc/apt/keyrings/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
-    && apt-get update \
-    && apt-get install -y yarn \
     && apt-get install -y mysql-client \
     && apt-get -y autoremove \
     && apt-get clean \

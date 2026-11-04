@@ -1,0 +1,63 @@
+// Grafana Alloy: tails the Laravel logs (./storage/logs mounted read-only)
+// and ships the JSON lines written by the "loki" log channel to Loki.
+
+// Matches the daily-rotated laravel-json-YYYY-MM-DD.log files written by the "loki" channel.
+local.file_match "laravel" {
+	path_targets = [{
+		"__path__" = "/var/log/laravel/laravel-json-*.log",
+		"job"      = "laravel",
+	}]
+}
+
+// Read positions are stored under --storage.path (a named volume), so a restart
+// resumes where it left off instead of re-shipping every file.
+loki.source.file "laravel" {
+	targets    = local.file_match.laravel.targets
+	forward_to = [loki.process.laravel.receiver]
+}
+
+loki.process "laravel" {
+	stage.json {
+		expressions = {
+			level    = "level_name",
+			channel  = "channel",
+			datetime = "datetime",
+		}
+	}
+
+	// Use the time the record was logged (e.g. 2026-11-04T04:52:43.507330+00:00),
+	// not the time Alloy happened to read the line.
+	stage.timestamp {
+		source = "datetime"
+		format = "RFC3339Nano"
+	}
+
+	// Loki rejects samples older than reject_old_samples_max_age (168h); skip them
+	// up front instead of failing pushes when older rotated files are first read.
+	stage.drop {
+		older_than          = "168h"
+		drop_counter_reason = "too_old"
+	}
+
+	// Only low-cardinality values become labels; everything else (message,
+	// context.trace_id, ...) stays in the log line and is queried with | json.
+	stage.labels {
+		values = {
+			level   = "",
+			channel = "",
+		}
+	}
+
+	// The "filename" label set by loki.source.file is kept on purpose: it gives each
+	// daily file its own stream. Loki rejects entries more than an hour older than
+	// the newest one in a stream, so when several days of files are read at once
+	// (first start, fresh alloy-data volume) a shared stream would drop older days.
+
+	forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}

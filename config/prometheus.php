@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'enabled' => true,
+    'enabled' => filter_var(env('PROMETHEUS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     /*
      * The urls that will return metrics.
@@ -13,12 +13,17 @@ return [
     ],
 
     /*
-     * Only these IP's will be allowed to visit the above urls.
-     * All IP's are allowed when empty.
+     * Only these IPs or CIDR ranges will be allowed to visit the above urls,
+     * as a comma separated list. No IP is allowed when the list is empty;
+     * use "0.0.0.0/0,::/0" to deliberately allow every IP.
+     *
+     * The default only allows loopback; .env.example adds the private ranges
+     * Docker networks use, so the docker-compose Prometheus can scrape the app.
      */
-    'allowed_ips' => [
-        // '1.2.3.4',
-    ],
+    'allowed_ips' => array_values(array_filter(array_map(
+        trim(...),
+        explode(',', (string) env('PROMETHEUS_ALLOWED_IPS', '127.0.0.1,::1')),
+    ))),
 
     /*
      * This is the default namespace that will be
@@ -30,7 +35,7 @@ return [
      * The middleware that will be applied to the urls above
      */
     'middleware' => [
-        Spatie\Prometheus\Http\Middleware\AllowIps::class,
+        App\Http\Middleware\RestrictPrometheusAccessByIp::class,
     ],
 
     /*
@@ -47,15 +52,20 @@ return [
     'wipe_storage_after_rendering' => false,
 
     /**
-     * Select a cache to store gauges, counters, summaries and histograms between requests.
-     * In a multi node setup you should ensure that each node writes to its own
-     * cache instance or uses a node specific prefix.
-     * Configure the cache store in config/cache.php.
+     * Where gauges, counters, summaries and histograms are stored between requests.
      *
-     * to use an in memory adapter for testing use array or null as your store
-     * or remove the cache entry all together:
-     *  'cache' => null       // InMemory implementation without laravel cache
-     *  'cache' => 'array'    // InMemory implementation using laravel cache
+     * Supported: "redis", "memory"
+     *
+     * "redis" updates every sample atomically on the server, so concurrent workers
+     * never overwrite each other's increments. "memory" only keeps samples for
+     * the current process, which suits tests and CI where Redis isn't running.
      */
-    'cache' => env('PROMETHEUS_CACHE_STORE', 'database'),
+    'storage' => env('PROMETHEUS_STORAGE', 'redis'),
+
+    /**
+     * The connection from the "redis" section of config/database.php that is used
+     * when the storage above is "redis". It must use the phpredis client. Keys get
+     * the connection's own prefix followed by "PROMETHEUS_".
+     */
+    'redis_connection' => env('PROMETHEUS_REDIS_CONNECTION', 'default'),
 ];

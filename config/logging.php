@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -68,13 +69,11 @@ return [
         ],
 
         'loki' => [
-            'driver' => 'monolog',
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel-json.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'handler' => StreamHandler::class,
-            'handler_with' => [
-                'stream' => storage_path('logs/laravel-json.log'),
-            ],
-            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'formatter' => JsonFormatter::class,
         ],
 
         'daily' => [

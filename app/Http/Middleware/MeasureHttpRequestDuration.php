@@ -5,52 +5,70 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Foundation\Http\HealthCheck;
 use Illuminate\Http\Request;
 use Prometheus\CollectorRegistry;
 use Symfony\Component\HttpFoundation\Response;
-use Throwable;
 
 final class MeasureHttpRequestDuration
 {
     /**
-     * Handle an incoming request.
+     * Record how long the request took.
+     *
+     * The clock starts at REQUEST_TIME_FLOAT, which PHP sets when the request
+     * arrives, so framework bootstrapping and earlier middleware are included.
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $startTime = microtime(true);
+        $startedAt = (float) $request->server('REQUEST_TIME_FLOAT', microtime(true));
 
         $response = $next($request);
 
-        $duration = microtime(true) - $startTime;
-
-        // Exclude Prometheus scraping endpoint itself from metrics to avoid pollution
-        if ($request->is('prometheus') || $request->is('up')) {
-            return $response;
-        }
-
-        try {
-            if (app()->bound(CollectorRegistry::class)) {
-                $registry = app(CollectorRegistry::class);
-                $histogram = $registry->getOrRegisterHistogram(
-                    'laravel',
-                    'http_request_duration_seconds',
-                    'Duration of HTTP requests',
-                    ['method', 'status', 'uri']
-                );
-
-                // Normalize URI to avoid cardinality explosion (e.g. replace IDs with route param keys)
-                $uri = $request->route() ? $request->route()->uri() : 'unmatched_route';
-
-                $histogram->observe($duration, [
-                    $request->method(),
-                    (string) $response->getStatusCode(),
-                    $uri,
-                ]);
-            }
-        } catch (Throwable $e) {
-            // Silently fail to not crash the request
+        if ($this->shouldMeasure($request)) {
+            $this->recordDuration($request, $response, microtime(true) - $startedAt);
         }
 
         return $response;
+    }
+
+    /**
+     * Skip the metrics endpoints and the health check, so scrapes don't pollute the histogram.
+     */
+    private function shouldMeasure(Request $request): bool
+    {
+        return config('prometheus.enabled')
+            && ! $request->routeIs('prometheus.*')
+            && ! $this->isHealthCheck($request);
+    }
+
+    /**
+     * Whether the request hit the health route registered by withRouting(health: ...),
+     * identified by its controller so it stays excluded if its path changes.
+     * The metrics routes are matched by the "prometheus.{name}" names spatie gives them.
+     */
+    private function isHealthCheck(Request $request): bool
+    {
+        return $request->route()?->getControllerClass() === HealthCheck::class;
+    }
+
+    /**
+     * Observe the duration, labelled by the route template (e.g. "users/{user}") rather
+     * than the path to keep cardinality bounded. A metrics failure is reported but
+     * never breaks the request.
+     */
+    private function recordDuration(Request $request, Response $response, float $durationInSeconds): void
+    {
+        rescue(fn () => app(CollectorRegistry::class)
+            ->getOrRegisterHistogram(
+                'laravel',
+                'http_request_duration_seconds',
+                'Duration of HTTP requests',
+                ['method', 'status', 'uri'],
+            )
+            ->observe($durationInSeconds, [
+                $request->method(),
+                (string) $response->getStatusCode(),
+                $request->route()?->uri() ?? 'unmatched_route',
+            ]));
     }
 }
