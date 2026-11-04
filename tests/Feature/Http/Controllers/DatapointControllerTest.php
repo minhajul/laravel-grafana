@@ -96,3 +96,9 @@ it('does not persist a session', function () {
 
     $this->assertDatabaseEmpty('sessions');
 });
+
+it('returns 422 as JSON for an invalid page size when the client does not ask for JSON', function () {
+    $response = $this->get(route('api.v1.datapoints.index', ['per_page' => 0]));
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('per_page');
+});
