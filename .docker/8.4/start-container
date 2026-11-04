@@ -14,8 +14,16 @@ if [ ! -z "$WWWGROUP" ]; then
     groupmod -g $WWWGROUP sail
 fi
 
-if [ -d /var/www/html ]; then
-    chown -R sail:sail /var/www/html
+# Only the runtime-writable directories need to belong to sail. Recursing over the
+# whole bind mount (vendor/, node_modules/, ...) on every start is slow, and with
+# WWWUSER/WWWGROUP set (as `sail up` does) sail already matches the host owner.
+for writable_dir in /var/www/html/storage /var/www/html/bootstrap/cache; do
+    if [ -d "$writable_dir" ]; then
+        chown -R sail:sail "$writable_dir"
+    fi
+done
+
+if [ -f /var/www/html/artisan ]; then
     chmod +x /var/www/html/artisan
 fi
 
