@@ -9,8 +9,8 @@ services:
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
-            - '${APP_PORT:-80}:8000'
-            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+            - '127.0.0.1:${APP_PORT:-80}:8000'
+            - '127.0.0.1:${VITE_PORT:-5173}:${VITE_PORT:-5173}'
         environment:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
@@ -28,15 +28,16 @@ services:
     mysql:
         image: 'mysql:8.4.13'
         ports:
-            - '${FORWARD_DB_PORT:-3306}:3306'
+            - '127.0.0.1:${FORWARD_DB_PORT:-3306}:3306'
         environment:
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ROOT_HOST: '%'
             MYSQL_DATABASE: '${DB_DATABASE}'
             MYSQL_USER: '${DB_USERNAME}'
             MYSQL_PASSWORD: '${DB_PASSWORD}'
-            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+            MYSQL_EXPORTER_PASSWORD: '${MYSQL_EXPORTER_PASSWORD:-exporter-password}'
         volumes:
+            - './.docker/mysql/create-exporter-user.sh:/docker-entrypoint-initdb.d/20-create-exporter-user.sh'
             - 'sail-mysql:/var/lib/mysql'
             - './.docker/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
         networks:
@@ -48,8 +49,6 @@ services:
 
     loki:
         image: grafana/loki:3.7.9
-        ports:
-            - "3100:3100"
         command: -config.file=/etc/loki/local-config.yaml
         volumes:
             - loki-data:/loki
@@ -75,7 +74,7 @@ services:
     prometheus:
         image: prom/prometheus:v3.15.1
         ports:
-            - "9090:9090"
+            - "127.0.0.1:9090:9090"
         volumes:
             - ./.docker/config/prometheus.yml:/etc/prometheus/prometheus.yml
             - prometheus-data:/prometheus
@@ -89,14 +88,16 @@ services:
     grafana:
         image: grafana/grafana:13.3.0
         container_name: grafana
-        user: "0" # (0 = root)
+        environment:
+            GF_SECURITY_ADMIN_USER: '${GRAFANA_ADMIN_USER:-admin}'
+            GF_SECURITY_ADMIN_PASSWORD: '${GRAFANA_ADMIN_PASSWORD:-admin}'
         volumes:
             - ./.docker/config/grafana.ini:/etc/grafana/grafana.ini
             - ./.docker/config/provisioning:/etc/grafana/provisioning:ro
             # Use a named volume for data persistence to avoid permission issues
             - grafana-data:/var/lib/grafana
         ports:
-            - "3000:3000"
+            - "127.0.0.1:3000:3000"
         depends_on:
             - mysql
             - prometheus
@@ -107,8 +108,6 @@ services:
     node-exporter:
         image: prom/node-exporter:v1.12.1
         container_name: node-exporter
-        ports:
-            - "9100:9100"
         volumes:
             - '/proc:/host/proc:ro'
             - '/sys:/host/sys:ro'
@@ -124,12 +123,10 @@ services:
         image: prom/mysqld-exporter:v0.21.0
         container_name: mysql-exporter
         environment:
-            - MYSQLD_EXPORTER_PASSWORD=${DB_PASSWORD:-password}
+            - MYSQLD_EXPORTER_PASSWORD=${MYSQL_EXPORTER_PASSWORD:-exporter-password}
         command:
-            - '--mysqld.username=root'
+            - '--mysqld.username=exporter'
             - '--mysqld.address=mysql:3306'
-        ports:
-            - "9104:9104"
         networks:
             - sail
         depends_on:
@@ -139,8 +136,6 @@ services:
     blackbox-exporter:
         image: prom/blackbox-exporter:v0.29.1
         container_name: blackbox-exporter
-        ports:
-            - "9115:9115"
         volumes:
             - ./.docker/config/blackbox.yaml:/etc/blackbox_exporter/config.yml
         command:
@@ -155,10 +150,6 @@ services:
         volumes:
             - ./.docker/config/tempo.yaml:/etc/tempo.yaml
             - tempo-data:/var/tempo
-        ports:
-            - "3200:3200"  # Tempo API
-            - "4317:4317"  # OTLP gRPC
-            - "4318:4318"  # OTLP HTTP
         networks:
             - sail
 

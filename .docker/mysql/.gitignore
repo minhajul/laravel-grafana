@@ -2,3 +2,5 @@
 *
 # Except this file
 !.gitignore
+# And the init script that creates the mysqld-exporter user
+!create-exporter-user.sh
