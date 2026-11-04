@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Casts\TypedValue;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,25 +19,14 @@ final class Datapoint extends Model
     ];
 
     /**
-     * Get the stored value converted to the type named in the "cast" column.
+     * Get the attributes that should be cast.
      *
-     * Unknown cast types fall back to the raw string value.
-     *
-     * @return Attribute<string|int|float|bool|null, never>
+     * @return array<string, string>
      */
-    protected function value(): Attribute
+    protected function casts(): array
     {
-        return Attribute::get(function (mixed $value, array $attributes): string|int|float|bool|null {
-            if ($value === null) {
-                return null;
-            }
-
-            return match ($attributes['cast'] ?? 'string') {
-                'int', 'integer' => (int) $value,
-                'float', 'double' => (float) $value,
-                'bool', 'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
-                default => (string) $value,
-            };
-        });
+        return [
+            'value' => TypedValue::class,
+        ];
     }
 }
