@@ -36,8 +36,9 @@ services:
             MYSQL_DATABASE: '${DB_DATABASE}'
             MYSQL_USER: '${DB_USERNAME}'
             MYSQL_PASSWORD: '${DB_PASSWORD}'
-            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+            MYSQL_EXPORTER_PASSWORD: '${MYSQL_EXPORTER_PASSWORD:-exporter-password}'
         volumes:
+            - './.docker/mysql/create-exporter-user.sh:/docker-entrypoint-initdb.d/20-create-exporter-user.sh'
             - 'sail-mysql:/var/lib/mysql'
             - './.docker/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
         networks:
@@ -123,9 +124,9 @@ services:
         image: prom/mysqld-exporter:latest
         container_name: mysql-exporter
         environment:
-            - MYSQLD_EXPORTER_PASSWORD=${DB_PASSWORD:-password}
+            - MYSQLD_EXPORTER_PASSWORD=${MYSQL_EXPORTER_PASSWORD:-exporter-password}
         command:
-            - '--mysqld.username=root'
+            - '--mysqld.username=exporter'
             - '--mysqld.address=mysql:3306'
         networks:
             - sail
