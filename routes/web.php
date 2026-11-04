@@ -2,26 +2,31 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\DatapointController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return response()->json([
-        'status' => 'OK',
-        'data' => 'Laravel Grafana api',
-        'version' => '1.0.0',
-    ]);
-});
+/*
+ * These endpoints are called by probes and scripts rather than browsers, so they
+ * skip the "web" group's session, cookie and CSRF middleware to stay stateless.
+ */
+Route::withoutMiddleware('web')->group(function (): void {
+    Route::get('/', function () {
+        return response()->json([
+            'status' => 'OK',
+            'data' => 'Laravel Grafana api',
+            'version' => '1.0.0',
+        ]);
+    })->name('home');
 
-Route::get('/datapoint', DatapointController::class);
+    if (app()->isLocal()) {
+        Route::get('/log-test', function () {
+            Log::info('This is a test log from Laravel to Loki! Time: '.now());
+            Log::error('Whoops! This is a fake error for testing.');
 
-Route::get('/log-test', function () {
-    Log::info('This is a test log from Laravel to Loki! Time: '.now());
-    Log::error('Whoops! This is a fake error for testing.');
-
-    return response()->json([
-        'status' => 'OK',
-        'message' => 'Log has been sent.',
-    ]);
+            return response()->json([
+                'status' => 'OK',
+                'message' => 'Log has been sent.',
+            ]);
+        })->name('log-test');
+    }
 });
