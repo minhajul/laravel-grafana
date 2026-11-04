@@ -17,8 +17,7 @@ use Prometheus\Storage\Adapter;
 use Prometheus\Storage\InMemory;
 use Prometheus\Storage\Redis;
 use Redis as PhpRedis;
-use Spatie\Prometheus\Facades\Prometheus;
-use Throwable;
+use Spatie\Prometheus\Prometheus;
 
 final class PrometheusServiceProvider extends ServiceProvider
 {
@@ -65,6 +64,9 @@ final class PrometheusServiceProvider extends ServiceProvider
 
     /**
      * Register the application gauges and the database query listener.
+     *
+     * The gauges are only read by the metrics endpoint, so they are added when
+     * that endpoint resolves the Prometheus registry rather than on every boot.
      */
     public function boot(): void
     {
@@ -72,12 +74,14 @@ final class PrometheusServiceProvider extends ServiceProvider
             return;
         }
 
-        // Cache stores such as Redis return cached integers as numeric strings, so cast back.
-        Prometheus::addGauge('users_count')
-            ->value(fn (): int => (int) Cache::remember('prometheus_users_count', 300, fn (): int => User::query()->count()));
+        $this->callAfterResolving(Prometheus::class, function (Prometheus $prometheus): void {
+            // Cache stores such as Redis return cached integers as numeric strings, so cast back.
+            $prometheus->addGauge('users_count')
+                ->value(fn (): int => (int) Cache::remember('prometheus_users_count', 300, fn (): int => User::query()->count()));
 
-        Prometheus::addGauge('datapoints_count')
-            ->value(fn (): int => (int) Cache::remember('prometheus_datapoints_count', 300, fn (): int => Datapoint::query()->count()));
+            $prometheus->addGauge('datapoints_count')
+                ->value(fn (): int => (int) Cache::remember('prometheus_datapoints_count', 300, fn (): int => Datapoint::query()->count()));
+        });
 
         DB::listen(function (QueryExecuted $query): void {
             $this->recordQueryDuration($query);
@@ -93,8 +97,8 @@ final class PrometheusServiceProvider extends ServiceProvider
             return;
         }
 
-        try {
-            $this->app->make(CollectorRegistry::class)
+        rescue(
+            fn () => $this->app->make(CollectorRegistry::class)
                 ->getOrRegisterHistogram(
                     'laravel',
                     'database_query_duration_seconds',
@@ -102,12 +106,9 @@ final class PrometheusServiceProvider extends ServiceProvider
                     ['sql_type'],
                     self::QUERY_DURATION_BUCKETS,
                 )
-                ->observe($query->time / 1000, [$this->sqlType($query->sql)]);
-        } catch (Throwable $exception) {
-            $this->queryMetricsPausedUntil = now()->addSeconds(self::STORAGE_FAILURE_PAUSE_SECONDS);
-
-            report($exception);
-        }
+                ->observe($query->time / 1000, [$this->sqlType($query->sql)]),
+            fn () => $this->queryMetricsPausedUntil = now()->addSeconds(self::STORAGE_FAILURE_PAUSE_SECONDS),
+        );
     }
 
     /**

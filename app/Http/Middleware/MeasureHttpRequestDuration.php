@@ -9,7 +9,6 @@ use Illuminate\Foundation\Http\HealthCheck;
 use Illuminate\Http\Request;
 use Prometheus\CollectorRegistry;
 use Symfony\Component\HttpFoundation\Response;
-use Throwable;
 
 final class MeasureHttpRequestDuration
 {
@@ -37,21 +36,15 @@ final class MeasureHttpRequestDuration
      */
     private function shouldMeasure(Request $request): bool
     {
-        if (! config('prometheus.enabled') || $this->isHealthCheck($request)) {
-            return false;
-        }
-
-        $metricsPaths = collect(config('prometheus.urls', []))
-            ->map(fn (string $url): string => mb_trim($url, '/'))
-            ->values()
-            ->all();
-
-        return ! $request->is(...$metricsPaths);
+        return config('prometheus.enabled')
+            && ! $request->routeIs('prometheus.*')
+            && ! $this->isHealthCheck($request);
     }
 
     /**
      * Whether the request hit the health route registered by withRouting(health: ...),
      * identified by its controller so it stays excluded if its path changes.
+     * The metrics routes are matched by the "prometheus.{name}" names spatie gives them.
      */
     private function isHealthCheck(Request $request): bool
     {
@@ -65,21 +58,17 @@ final class MeasureHttpRequestDuration
      */
     private function recordDuration(Request $request, Response $response, float $durationInSeconds): void
     {
-        try {
-            app(CollectorRegistry::class)
-                ->getOrRegisterHistogram(
-                    'laravel',
-                    'http_request_duration_seconds',
-                    'Duration of HTTP requests',
-                    ['method', 'status', 'uri'],
-                )
-                ->observe($durationInSeconds, [
-                    $request->method(),
-                    (string) $response->getStatusCode(),
-                    $request->route()?->uri() ?? 'unmatched_route',
-                ]);
-        } catch (Throwable $exception) {
-            report($exception);
-        }
+        rescue(fn () => app(CollectorRegistry::class)
+            ->getOrRegisterHistogram(
+                'laravel',
+                'http_request_duration_seconds',
+                'Duration of HTTP requests',
+                ['method', 'status', 'uri'],
+            )
+            ->observe($durationInSeconds, [
+                $request->method(),
+                (string) $response->getStatusCode(),
+                $request->route()?->uri() ?? 'unmatched_route',
+            ]));
     }
 }
