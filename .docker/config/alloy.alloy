@@ -1,18 +1,12 @@
 // Grafana Alloy: tails the Laravel logs (./storage/logs mounted read-only)
 // and ships the JSON lines written by the "loki" log channel to Loki.
 
-logging {
-	level  = "info"
-	format = "logfmt"
-}
-
-// Matches the daily-rotated laravel-json-YYYY-MM-DD.log files (and any other *.log).
+// Matches the daily-rotated laravel-json-YYYY-MM-DD.log files written by the "loki" channel.
 local.file_match "laravel" {
 	path_targets = [{
-		"__path__" = "/var/log/laravel/*.log",
+		"__path__" = "/var/log/laravel/laravel-json-*.log",
 		"job"      = "laravel",
 	}]
-	sync_period = "10s"
 }
 
 // Read positions are stored under --storage.path (a named volume), so a restart
@@ -23,12 +17,6 @@ loki.source.file "laravel" {
 }
 
 loki.process "laravel" {
-	// Keep only JSON lines; plain-text logs (e.g. laravel.log) and blank lines are dropped.
-	stage.drop {
-		expression          = "^([^{]|$)"
-		drop_counter_reason = "not_json"
-	}
-
 	stage.json {
 		expressions = {
 			level    = "level_name",
