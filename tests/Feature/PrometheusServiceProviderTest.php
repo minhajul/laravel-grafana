@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Redis as RedisFacade;
 use Prometheus\CollectorRegistry;
-use Prometheus\Exception\StorageException;
 use Prometheus\RenderTextFormat;
 use Prometheus\Storage\Adapter;
 use Prometheus\Storage\Redis;
@@ -65,7 +64,7 @@ it('records the duration of database queries', function () {
 
     DB::select('select 1');
 
-    $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());
+    $metrics = renderedMetrics();
 
     expect($metrics)->toContain('laravel_database_query_duration_seconds_count{sql_type="select"} 1');
 });
@@ -73,7 +72,7 @@ it('records the duration of database queries', function () {
 it('labels queries with a fixed set of statement types', function (string $sql, string $sqlType) {
     event(new QueryExecuted($sql, [], 1.0, DB::connection()));
 
-    $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());
+    $metrics = renderedMetrics();
 
     expect($metrics)->toContain("laravel_database_query_duration_seconds_count{sql_type=\"{$sqlType}\"} 1");
 })->with([
@@ -92,7 +91,7 @@ it('labels queries with a fixed set of statement types', function (string $sql, 
 it('puts sub-millisecond queries into sub-millisecond buckets', function () {
     event(new QueryExecuted('select 1', [], 0.2, DB::connection()));
 
-    $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());
+    $metrics = renderedMetrics();
 
     expect($metrics)
         ->toContain('laravel_database_query_duration_seconds_bucket{sql_type="select",le="0.0001"} 0')
@@ -101,9 +100,7 @@ it('puts sub-millisecond queries into sub-millisecond buckets', function () {
 
 it('keeps running queries and reports the failure once while the metric storage is unavailable', function () {
     Exceptions::fake();
-    $unavailableStorage = Mockery::mock(Adapter::class);
-    $unavailableStorage->shouldReceive('updateHistogram')->andThrow(new StorageException("Can't connect to Redis server."));
-    app()->instance(CollectorRegistry::class, new CollectorRegistry($unavailableStorage, false));
+    useUnavailableMetricStorage();
 
     $firstResult = DB::select('select 1 as value');
     $secondResult = DB::select('select 2 as value');
@@ -114,9 +111,7 @@ it('keeps running queries and reports the failure once while the metric storage 
 
 it('retries the metric storage after the failure pause has passed', function () {
     Exceptions::fake();
-    $unavailableStorage = Mockery::mock(Adapter::class);
-    $unavailableStorage->shouldReceive('updateHistogram')->andThrow(new StorageException("Can't connect to Redis server."));
-    app()->instance(CollectorRegistry::class, new CollectorRegistry($unavailableStorage, false));
+    useUnavailableMetricStorage();
     DB::select('select 1');
 
     $this->travel(31)->seconds();

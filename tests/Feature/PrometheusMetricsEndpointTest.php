@@ -11,8 +11,7 @@ it('exposes the application gauges and the request and query histograms', functi
     Datapoint::factory()->count(3)->create();
     $this->getJson('/');
 
-    // Access control on the endpoint is configured separately; this test covers what it renders.
-    $response = $this->withoutMiddleware()->get('/prometheus');
+    $response = $this->get('/prometheus');
 
     $response
         ->assertSee('app_users_count 1', false)
@@ -26,7 +25,7 @@ it('renders gauges when the cache returns the cached counts as numeric strings',
     Cache::put('prometheus_users_count', '5', 300);
     Cache::put('prometheus_datapoints_count', '7', 300);
 
-    $response = $this->withoutMiddleware()->get('/prometheus');
+    $response = $this->get('/prometheus');
 
     $response
         ->assertOk()

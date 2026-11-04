@@ -32,5 +32,8 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="OTEL_SDK_DISABLED" value="true" verbatim="true"/>
         <env name="PROMETHEUS_STORAGE" value="memory"/>
+        <env name="PROMETHEUS_ENABLED" value="true"/>
+        <env name="PROMETHEUS_ALLOWED_IPS" value="127.0.0.1,::1"/>
+        <env name="LOG_CHANNEL" value="null"/>
     </php>
 </phpunit>

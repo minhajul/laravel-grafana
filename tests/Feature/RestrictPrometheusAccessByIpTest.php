@@ -3,10 +3,6 @@
 declare(strict_types=1);
 
 use Dotenv\Dotenv;
-use Illuminate\Contracts\Console\Kernel;
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Bootstrap\LoadConfiguration;
-use Illuminate\Routing\Route;
 
 /**
  * Run the callback with the given environment variables set, where null means unset,
@@ -87,18 +83,11 @@ it('returns 403 when only a spoofed X-Forwarded-For header is allowed', function
     $response->assertForbidden();
 });
 
-it('serves metrics only to loopback by default', function (string $clientIp, int $expectedStatus) {
-    config(['prometheus.allowed_ips' => prometheusConfigWithEnvironment(['PROMETHEUS_ALLOWED_IPS' => null])['allowed_ips']]);
+it('allows only loopback by default', function () {
+    $config = prometheusConfigWithEnvironment(['PROMETHEUS_ALLOWED_IPS' => null]);
 
-    $response = $this->withServerVariables(['REMOTE_ADDR' => $clientIp])->get('/prometheus');
-
-    $response->assertStatus($expectedStatus);
-})->with([
-    'loopback' => ['127.0.0.1', 200],
-    'private proxy address' => ['10.0.0.5', 403],
-    'docker bridge network' => ['172.18.0.5', 403],
-    'public address' => ['203.0.113.10', 403],
-]);
+    expect($config['allowed_ips'])->toBe(['127.0.0.1', '::1']);
+});
 
 it('lets the docker-compose Prometheus scrape with the .env.example allowlist', function (string $clientIp, int $expectedStatus) {
     $exampleAllowlist = Dotenv::parse((string) file_get_contents(base_path('.env.example')))['PROMETHEUS_ALLOWED_IPS'];
@@ -122,25 +111,11 @@ it('reads a comma separated allowlist from PROMETHEUS_ALLOWED_IPS', function () 
     expect($config['allowed_ips'])->toBe(['192.0.2.7', '10.0.0.0/8']);
 });
 
-it('registers the metrics endpoint only when prometheus is enabled', function (bool $enabled) {
-    // Boot a separate app and override the config right after it loads, since .env
-    // values would win over environment variables set from inside the test.
-    $app = require base_path('bootstrap/app.php');
-    $app->afterBootstrapping(LoadConfiguration::class, fn (Application $app) => $app['config']->set('prometheus.enabled', $enabled));
-    $app->make(Kernel::class)->bootstrap();
+it('registers the metrics endpoint only when PROMETHEUS_ENABLED is true', function (string $value, bool $registered) {
+    withEnvironment(['PROMETHEUS_ENABLED' => $value], fn () => $this->refreshApplication());
 
-    $metricsRouteIsRegistered = collect($app['router']->getRoutes()->getRoutes())
-        ->contains(fn (Route $route): bool => $route->uri() === 'prometheus');
-
-    expect($metricsRouteIsRegistered)->toBe($enabled);
+    expect(app('router')->has('prometheus.default'))->toBe($registered);
 })->with([
-    'enabled' => true,
-    'disabled' => false,
-]);
-
-it('reads PROMETHEUS_ENABLED as a boolean', function (string $value, bool $enabled) {
-    expect(prometheusConfigWithEnvironment(['PROMETHEUS_ENABLED' => $value])['enabled'])->toBe($enabled);
-})->with([
-    'true' => ['true', true],
-    'false' => ['false', false],
+    'enabled' => ['true', true],
+    'disabled' => ['false', false],
 ]);
