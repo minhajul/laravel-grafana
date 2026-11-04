@@ -15,7 +15,7 @@ final class DatabaseSeeder extends Seeder
     {
         $this->call([
             UsersTableSeeder::class,
-            DataPointTableSeeder::class,
+            DatapointTableSeeder::class,
         ]);
     }
 }
