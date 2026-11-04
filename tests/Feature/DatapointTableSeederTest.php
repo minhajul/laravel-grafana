@@ -3,10 +3,7 @@
 declare(strict_types=1);
 
 use Database\Seeders\DatapointTableSeeder;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
-
-uses(LazilyRefreshDatabase::class);
 
 it('seeds datapoints with values between 0 and 90 and timestamps from the last 7 days', function () {
     $this->freezeTime();

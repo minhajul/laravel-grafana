@@ -2,15 +2,12 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Route;
 use Prometheus\CollectorRegistry;
 use Prometheus\Exception\StorageException;
 use Prometheus\RenderTextFormat;
 use Prometheus\Storage\Adapter;
-
-uses(LazilyRefreshDatabase::class);
 
 it('labels requests with the method, status and route template', function () {
     Route::post('/orders/{order}', fn () => response()->noContent(201));

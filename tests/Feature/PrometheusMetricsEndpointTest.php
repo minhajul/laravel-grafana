@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 use App\Models\Datapoint;
 use App\Models\User;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-
-uses(LazilyRefreshDatabase::class);
 
 it('exposes the application gauges and the request and query histograms', function () {
     User::factory()->create();
