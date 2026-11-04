@@ -59,15 +59,19 @@ services:
         networks:
             - sail
 
-    promtail:
-        # Updated to a modern version (v1.3.0 was very old)
-        image: grafana/promtail:3.0.0
+    alloy:
+        # Grafana Alloy replaces Promtail (EOL March 2026) as the log collector
+        image: grafana/alloy:v1.21.3
         volumes:
-            # Mount the actual configuration file
-            - ./.docker/config/promtail.yaml:/etc/promtail/config.yaml
-            # Mount the Laravel logs directory directly so Promtail can read them
+            - ./.docker/config/alloy.alloy:/etc/alloy/config.alloy:ro
+            # Mount the Laravel logs directory read-only so Alloy can tail them
             - ./storage/logs:/var/log/laravel:ro
-        command: -config.file=/etc/promtail/config.yaml
+            # Persist read positions so a restart doesn't re-ship every log line
+            - alloy-data:/var/lib/alloy/data
+        command:
+            - 'run'
+            - '--storage.path=/var/lib/alloy/data'
+            - '/etc/alloy/config.alloy'
         networks:
             - sail
         depends_on:
@@ -172,5 +176,6 @@ volumes:
     grafana-data:
     prometheus-data:
     tempo-data:
+    alloy-data:
     sail-mysql:
         driver: local
