@@ -26,8 +26,7 @@ services:
                 condition: service_healthy
 
     mysql:
-        image: 'mysql:8.0'
-        command: --default-authentication-plugin=mysql_native_password
+        image: 'mysql:8.4.13'
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
@@ -43,12 +42,12 @@ services:
         networks:
             - sail
         healthcheck:
-            test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD}"]
             retries: 3
             timeout: 5s
 
     loki:
-        image: grafana/loki:3.0.0
+        image: grafana/loki:3.7.9
         ports:
             - "3100:3100"
         command: -config.file=/etc/loki/local-config.yaml
@@ -74,7 +73,7 @@ services:
             - loki
 
     prometheus:
-        image: prom/prometheus:latest
+        image: prom/prometheus:v3.15.1
         ports:
             - "9090:9090"
         volumes:
@@ -88,7 +87,7 @@ services:
             - laravel.test
 
     grafana:
-        image: grafana/grafana:latest
+        image: grafana/grafana:13.3.0
         container_name: grafana
         user: "0" # (0 = root)
         volumes:
@@ -106,7 +105,7 @@ services:
             - sail
 
     node-exporter:
-        image: prom/node-exporter:latest
+        image: prom/node-exporter:v1.12.1
         container_name: node-exporter
         ports:
             - "9100:9100"
@@ -122,7 +121,7 @@ services:
             - sail
 
     mysql-exporter:
-        image: prom/mysqld-exporter:latest
+        image: prom/mysqld-exporter:v0.21.0
         container_name: mysql-exporter
         environment:
             - MYSQLD_EXPORTER_PASSWORD=${DB_PASSWORD:-password}
@@ -138,7 +137,7 @@ services:
                 condition: service_healthy
 
     blackbox-exporter:
-        image: prom/blackbox-exporter:latest
+        image: prom/blackbox-exporter:v0.29.1
         container_name: blackbox-exporter
         ports:
             - "9115:9115"
@@ -150,7 +149,7 @@ services:
             - sail
 
     tempo:
-        image: grafana/tempo:latest
+        image: grafana/tempo:3.1.1
         container_name: tempo
         command: ["-config.file=/etc/tempo.yaml"]
         volumes:
