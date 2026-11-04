@@ -44,6 +44,25 @@ it('records the duration of database queries', function () {
     expect($metrics)->toContain('laravel_database_query_duration_seconds_count{sql_type="select"} 1');
 });
 
+it('labels queries with a fixed set of statement types', function (string $sql, string $sqlType) {
+    event(new QueryExecuted($sql, [], 1.0, DB::connection()));
+
+    $metrics = (new RenderTextFormat)->render(app(CollectorRegistry::class)->getMetricFamilySamples());
+
+    expect($metrics)->toContain("laravel_database_query_duration_seconds_count{sql_type=\"{$sqlType}\"} 1");
+})->with([
+    'select' => ['select * from "users"', 'select'],
+    'uppercase select' => ['SELECT 1', 'select'],
+    'select after a newline' => ["\n    select 1", 'select'],
+    'parenthesized union' => ['(select * from "users") union (select * from "users")', 'select'],
+    'insert' => ['insert into "users" ("name") values (?)', 'insert'],
+    'update' => ['update "users" set "name" = ?', 'update'],
+    'delete' => ['delete from "users" where "id" = ?', 'delete'],
+    'common table expression' => ['with "recent" as (select 1) select * from "recent"', 'other'],
+    'schema change' => ['create table "users" ("id" integer primary key)', 'other'],
+    'empty statement' => ['', 'other'],
+]);
+
 it('puts sub-millisecond queries into sub-millisecond buckets', function () {
     event(new QueryExecuted('select 1', [], 0.2, DB::connection()));
 

@@ -37,6 +37,13 @@ final class PrometheusServiceProvider extends ServiceProvider
         0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0,
     ];
 
+    /**
+     * The statement types used as "sql_type" label values; any other statement is "other".
+     *
+     * @var list<string>
+     */
+    private const array SQL_TYPES = ['select', 'insert', 'update', 'delete'];
+
     private ?CarbonInterface $queryMetricsPausedUntil = null;
 
     /**
@@ -93,12 +100,23 @@ final class PrometheusServiceProvider extends ServiceProvider
                     ['sql_type'],
                     self::QUERY_DURATION_BUCKETS,
                 )
-                ->observe($query->time / 1000, [mb_strtolower(strtok($query->sql, ' '))]);
+                ->observe($query->time / 1000, [$this->sqlType($query->sql)]);
         } catch (Throwable $exception) {
             $this->queryMetricsPausedUntil = now()->addSeconds(self::STORAGE_FAILURE_PAUSE_SECONDS);
 
             report($exception);
         }
+    }
+
+    /**
+     * Map a statement to a fixed label value, so leading parentheses or whitespace and
+     * statements such as CTEs or schema changes can't create new series.
+     */
+    private function sqlType(string $sql): string
+    {
+        $keyword = preg_match('/^[\s(]*([a-z]+)/i', $sql, $matches) === 1 ? mb_strtolower($matches[1]) : null;
+
+        return in_array($keyword, self::SQL_TYPES, true) ? $keyword : 'other';
     }
 
     /**
