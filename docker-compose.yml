@@ -90,7 +90,9 @@ services:
     grafana:
         image: grafana/grafana:latest
         container_name: grafana
-        user: "0" # (0 = root)
+        environment:
+            GF_SECURITY_ADMIN_USER: '${GRAFANA_ADMIN_USER:-admin}'
+            GF_SECURITY_ADMIN_PASSWORD: '${GRAFANA_ADMIN_PASSWORD:-admin}'
         volumes:
             - ./.docker/config/grafana.ini:/etc/grafana/grafana.ini
             - ./.docker/config/provisioning:/etc/grafana/provisioning:ro
