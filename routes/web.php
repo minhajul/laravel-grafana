@@ -17,14 +17,16 @@ Route::withoutMiddleware('web')->group(function (): void {
             'version' => '1.0.0',
         ]);
     })->name('home');
-});
 
-Route::get('/log-test', function () {
-    Log::info('This is a test log from Laravel to Loki! Time: '.now());
-    Log::error('Whoops! This is a fake error for testing.');
+    if (app()->isLocal()) {
+        Route::get('/log-test', function () {
+            Log::info('This is a test log from Laravel to Loki! Time: '.now());
+            Log::error('Whoops! This is a fake error for testing.');
 
-    return response()->json([
-        'status' => 'OK',
-        'message' => 'Log has been sent.',
-    ]);
+            return response()->json([
+                'status' => 'OK',
+                'message' => 'Log has been sent.',
+            ]);
+        })->name('log-test');
+    }
 });
