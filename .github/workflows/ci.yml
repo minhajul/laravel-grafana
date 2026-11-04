@@ -61,9 +61,4 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Check prometheus.yml with promtool
-        run: >-
-          docker run --rm
-          -v "$PWD/.docker/config:/etc/prometheus:ro"
-          --entrypoint promtool
-          prom/prometheus:v3.15.1
-          check config /etc/prometheus/prometheus.yml
+        run: docker compose run --rm --no-deps --entrypoint promtool prometheus check config /etc/prometheus/prometheus.yml

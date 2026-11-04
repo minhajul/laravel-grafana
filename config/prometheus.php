@@ -17,11 +17,8 @@ return [
      * as a comma separated list. No IP is allowed when the list is empty;
      * use "0.0.0.0/0,::/0" to deliberately allow every IP.
      *
-     * The default only allows loopback, so an unconfigured app behind a proxy on
-     * a private network doesn't expose its metrics. .env.example adds the private
-     * ranges Docker networks use, so the docker-compose Prometheus can scrape the
-     * app. In production, set it to the IP of your Prometheus server, and configure
-     * trusted proxies when the app sits behind a load balancer or reverse proxy.
+     * The default only allows loopback; .env.example adds the private ranges
+     * Docker networks use, so the docker-compose Prometheus can scrape the app.
      */
     'allowed_ips' => array_values(array_filter(array_map(
         trim(...),
