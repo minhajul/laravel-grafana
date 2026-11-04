@@ -60,10 +60,10 @@ loki.process "laravel" {
 		}
 	}
 
-	// The file name changes daily with log rotation, so keep it out of the stream labels.
-	stage.label_drop {
-		values = ["filename"]
-	}
+	// The "filename" label set by loki.source.file is kept on purpose: it gives each
+	// daily file its own stream. Loki rejects entries more than an hour older than
+	// the newest one in a stream, so when several days of files are read at once
+	// (first start, fresh alloy-data volume) a shared stream would drop older days.
 
 	forward_to = [loki.write.default.receiver]
 }
