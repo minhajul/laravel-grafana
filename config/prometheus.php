@@ -47,15 +47,19 @@ return [
     'wipe_storage_after_rendering' => false,
 
     /**
-     * Select a cache to store gauges, counters, summaries and histograms between requests.
-     * In a multi node setup you should ensure that each node writes to its own
-     * cache instance or uses a node specific prefix.
-     * Configure the cache store in config/cache.php.
+     * Where gauges, counters, summaries and histograms are stored between requests.
      *
-     * to use an in memory adapter for testing use array or null as your store
-     * or remove the cache entry all together:
-     *  'cache' => null       // InMemory implementation without laravel cache
-     *  'cache' => 'array'    // InMemory implementation using laravel cache
+     * Supported: "redis", "memory"
+     *
+     * "redis" updates every sample atomically on the server, so concurrent workers
+     * never overwrite each other's increments. "memory" only keeps samples for
+     * the current process, which suits tests and CI where Redis isn't running.
      */
-    'cache' => env('PROMETHEUS_CACHE_STORE', 'database'),
+    'storage' => env('PROMETHEUS_STORAGE', 'redis'),
+
+    /**
+     * The connection from the "redis" section of config/database.php that is used
+     * when the storage above is "redis". Keys are prefixed with "PROMETHEUS_".
+     */
+    'redis_connection' => env('PROMETHEUS_REDIS_CONNECTION', 'default'),
 ];

@@ -31,5 +31,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="OTEL_SDK_DISABLED" value="true" verbatim="true"/>
+        <env name="PROMETHEUS_STORAGE" value="memory"/>
     </php>
 </phpunit>
